@@ -1,0 +1,10 @@
+{
+	"id": "iconify",
+	"name": "Iconify",
+	"version": "0.0.7",
+	"minAppVersion": "0.11.5",
+	"description": "Add custom icon to Obsidian and allow swapping out default icons.",
+	"author": "Moz",
+	"authorUrl": "https://github.com/moziar/obsidian-iconify",
+	"isDesktopOnly": false
+}
