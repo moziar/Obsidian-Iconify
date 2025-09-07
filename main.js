@@ -9895,7 +9895,7 @@ class IconSwapperSettingsTab extends obsidian.PluginSettingTab {
         // 重新创建自定义图标列表
         const customIcons = this.plugin.iconManager.customIcons;
         if (Object.keys(customIcons).length > 0) {
-            this.customIconsContainer.createEl('h3', {text: '现有自定义图标'});
+            this.customIconsContainer.createEl('h3', {text: 'Current Icon'});
             
             for (const iconName in customIcons) {
                 const iconSetting = new obsidian.Setting(this.customIconsContainer);
@@ -9918,10 +9918,10 @@ class IconSwapperSettingsTab extends obsidian.PluginSettingTab {
                 // 删除按钮
                 iconSetting.addButton(button => {
                     button.setIcon('trash')
-                        .setTooltip('删除此图标')
+                        .setTooltip('Delete this icon')
                         .onClick(() => __awaiter(this, void 0, void 0, function* () {
                             yield this.plugin.iconManager.removeCustomIcon(iconName);
-                            new obsidian.Notice(`图标 ${iconName} 已删除`);
+                            new obsidian.Notice(`Icon ${iconName} has been deleted.`);
                             this.refreshCustomIcons(); // 只刷新自定义图标部分
                         }));
                 });
@@ -9972,20 +9972,19 @@ class IconSwapperSettingsTab extends obsidian.PluginSettingTab {
         });
         
         // 自定义图标部分
-        containerEl.createEl('h3', {text: '自定义图标'});
+        containerEl.createEl('h3', {text: 'Custom Icon'});
         
         // 添加自定义图标的表单
         const customIconFormContainer = containerEl.createDiv({cls: 'custom-icon-form-container'});
         
         const addIconSetting = new obsidian.Setting(customIconFormContainer)
-            .setName('添加自定义图标')
-            .setDesc('添加新的自定义图标');
+            .setName('Add new customize icon');
         
         // 图标名称输入框
         let iconNameInput;
         addIconSetting.addText(text => {
             iconNameInput = text;
-            text.setPlaceholder('图标名称')
+            text.setPlaceholder('icon name')
                 .setValue('');
         });
         
@@ -9999,40 +9998,40 @@ class IconSwapperSettingsTab extends obsidian.PluginSettingTab {
         
         // 添加按钮
         addIconSetting.addButton(button => {
-            button.setButtonText('添加')
+            button.setButtonText('Add')
                 .setCta()
                 .onClick(() => __awaiter(this, void 0, void 0, function* () {
                     const name = iconNameInput.getValue().trim();
                     const svg = iconSvgInput.getValue().trim();
                     
                     if (!name) {
-                        new obsidian.Notice('请输入图标名称');
+                        new obsidian.Notice('Please enter the icon name');
                         return;
                     }
                     
                     if (this.plugin.iconManager.customIcons[name]) {
-                        new obsidian.Notice(`图标名称 "${name}" 已存在，请使用其他名称`);
+                        new obsidian.Notice(`Icon name "${name}" already exist, please use other name.`);
                         return;
                     }
                     
                     if (!svg || !validSvgRegEx.test(svg)) {
-                        new obsidian.Notice('请输入有效的SVG内容');
+                        new obsidian.Notice('Please input valid svg content!');
                         return;
                     }
                     
                     try {
                         const success = yield this.plugin.iconManager.addCustomIcon(name, svg);
                         if (success) {
-                            new obsidian.Notice(`图标 ${name} 添加成功`);
+                            new obsidian.Notice(`Icon ${name} successful added.`);
                             iconNameInput.setValue('');
                             iconSvgInput.setValue('');
                             this.refreshCustomIcons(); // 只刷新自定义图标部分
                         } else {
-                            new obsidian.Notice('添加图标失败');
+                            new obsidian.Notice('Add custom icon fail.');
                         }
                     } catch (error) {
                         console.error('Error adding custom icon:', error);
-                        new obsidian.Notice('添加图标时发生错误');
+                        new obsidian.Notice('Error adding custom icon.');
                     }
                 }));
         });
@@ -10045,7 +10044,7 @@ class IconSwapperSettingsTab extends obsidian.PluginSettingTab {
         
         // 默认图标替换部分 - 创建独立容器
         const defaultIconsSection = containerEl.createDiv({cls: 'default-icons-section'});
-        defaultIconsSection.createEl('h3', {text: '默认图标替换'});
+        defaultIconsSection.createEl('h3', {text: 'Default Icon'});
         this.defaultIconsContainer = defaultIconsSection.createDiv({cls: 'default-icons-container'});
         
         // Build a setting for each icon
@@ -10059,7 +10058,7 @@ class IconSwapperSettingsTab extends obsidian.PluginSettingTab {
             });
         } catch (error) {
             console.error('Error creating default icon settings:', error);
-            this.defaultIconsContainer.createEl('p', {text: '加载默认图标时出现错误'});
+            this.defaultIconsContainer.createEl('p', {text: 'Error creating default icon settings.'});
         }
     }
 }
