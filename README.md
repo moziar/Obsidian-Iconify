@@ -27,6 +27,15 @@ Use the [BRAT](https://github.com/TfTHacker/obsidian42-brat) to install this plu
 
 
 
+## Mentioned
+
+- Callout Manager: [Feature Request: Expanded Icon Options #3](https://github.com/eth-p/obsidian-callout-manager/issues/3)
+
+- Commander: [Adding new icons #59](https://github.com/phibr0/obsidian-commander/issues/59)
+
+
+
 ## Upstream
 
-[obsidian-icon-swapper](https://github.com/mgmeyers/obsidian-icon-swapper)
+Thanks to **@mgmeyers** for his [obsidian-icon-swapper](https://github.com/mgmeyers/obsidian-icon-swapper).
+
