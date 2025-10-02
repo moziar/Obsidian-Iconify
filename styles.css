@@ -9,6 +9,51 @@
   flex-grow: 0;
 }
 
+/* 添加自定义图标部分的按钮布局 */
+.icon-swapper .setting-item-control {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.icon-swapper .setting-item-control button {
+  flex: 0 0 auto;
+  box-shadow: none !important; /* 取消阴影 */
+  border: 1px solid var(--background-modifier-border);  /* 边框 */
+}
+
+/* 特别设置Upload SVG按钮样式，使其视觉层级更低 */
+.icon-swapper .setting-item-control button.upload-svg-btn {
+  flex: 0 0 auto;
+  width: auto;
+  padding: 0 12px;
+  background-color: var(--interactive-normal);
+  color: var(--text-muted);
+  font-weight: normal;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.icon-swapper .setting-item-control button.upload-svg-btn:hover {
+  /* background-color: var(--background-modifier-hover); */
+  background-color: var(--interactive-hover);
+  color: var(--text-normal);
+  box-shadow: none;
+}
+
+.icon-swapper .setting-item-control button.delete-svg-btn {
+  background-color: var(--background-modifier-error);
+  color: var(--text-on-accent);
+  font-weight: normal;
+}
+
+.icon-swapper .setting-item-control button.delete-svg-btn:hover {
+  background-color: var(--background-modifier-error-hover);
+  color: var(--text-on-accent);
+  font-weight: normal;
+}
+
 .icon-swapper-container {
   display: flex;
   flex-direction: column;

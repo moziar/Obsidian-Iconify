@@ -9489,12 +9489,12 @@ function scalePath(node, scaleOptions) {
             if (!/fill|stroke|opacity|d/.test(attr)) {
                 delete o.attributes[attr];
             }
-            else if (/fill|stroke/.test(attr)) {
+            // 不在这里设置 fill 属性，让 processSvgContent 函数处理
+            else if (/stroke/.test(attr)) {
                 o.attributes[attr] = "currentColor";
             }
         }
-        if (!o.attributes.fill)
-            o.attributes.fill = "currentColor";
+        // 不在这里设置 fill 属性，让 processSvgContent 函数处理
         if (!o.attributes.stroke &&
             (o.attributes.strokeWidth || o.attributes["stroke-width"]))
             o.attributes.stroke = "currentColor";
@@ -9523,7 +9523,113 @@ function replaceIconSVG(name, content) {
     });
 }
 
-const validSvgRegEx = /^<svg[^>]+?>[\w\W]+?<\/svg>?/i;
+// Update regular expression to better handle SVGs with newlines
+const validSvgRegEx = /^<svg[^>]+?>[\s\S]*?<\/svg>?/i;
+
+// 智能处理SVG内容，区分不同层级的颜色
+function processSvgContent(svgContent) {
+    // 移除SVG中的fill属性，但保留层次感
+    let processedSvg = svgContent;
+    
+    // 确保viewBox存在
+    processedSvg = processedSvg.replace(/<svg[^>]*>/, function(match) {
+        // 确保viewBox存在
+        if (match.indexOf('viewBox') === -1) {
+            // 如果没有viewBox，尝试从width和height创建一个
+            const widthMatch = match.match(/width="([^"]*)"/);
+            const heightMatch = match.match(/height="([^"]*)"/);
+            if (widthMatch && heightMatch) {
+                const width = widthMatch[1];
+                const height = heightMatch[1];
+                match = match.replace(/<svg/, `<svg viewBox="0 0 ${width} ${height}"`);
+            }
+        }
+        return match;
+    });
+    
+    // 预处理：移除所有元素中的fill和fill-rule属性
+    // 这样可以确保无论SVG中是否已经有fill属性，我们都能正确应用我们的颜色设置
+    processedSvg = processedSvg.replace(/<(path|rect|circle|ellipse|line|polyline|polygon)[^>]*>/g, function(match) {
+        // 移除所有形式的fill属性
+        match = match.replace(/\s+fill\s*=\s*["'][^"']*["']/g, '');
+        match = match.replace(/\s+fill\s*=\s*[^\s>\/>]*/g, '');
+        // 移除所有形式的fill-rule属性
+        match = match.replace(/\s+fill-rule\s*=\s*["'][^"']*["']/g, '');
+        match = match.replace(/\s+fill-rule\s*=\s*[^\s>\/>]*/g, '');
+        return match;
+    });
+    
+    // 解析SVG内容，处理路径元素
+    const pathRegex = /<path[^>]*>/g;
+    let pathMatches = [];
+    
+    // 首先收集所有路径元素
+    let pathMatch;
+    while ((pathMatch = pathRegex.exec(processedSvg)) !== null) {
+        pathMatches.push({
+            match: pathMatch[0],
+            index: pathMatch.index
+        });
+    }
+    
+    // 从后向前替换，以避免索引变化问题
+    for (let i = pathMatches.length - 1; i >= 0; i--) {
+        let match = pathMatches[i].match;
+        let index = pathMatches[i].index;
+        
+        // 为第一层路径保留currentColor，为第二层路径使用透明色
+        if (i === 0) {
+            // 第一个路径使用currentColor
+            match = match.replace(/<path/, '<path fill="currentColor"');
+        } else {
+            // 其他路径使用none
+            match = match.replace(/<path/, '<path fill="var(--background-primary)"');
+        }
+        
+        // 替换原始字符串中的路径
+        processedSvg = processedSvg.substring(0, index) + match + processedSvg.substring(index + pathMatches[i].match.length);
+    }
+    
+    // 同样处理其他可能的SVG元素
+    const elementTypes = ['rect', 'circle', 'ellipse', 'line', 'polyline', 'polygon'];
+    elementTypes.forEach(elementType => {
+        const regex = new RegExp(`<${elementType}[^>]*>`, 'g');
+        let elementMatches = [];
+        let elementMatch;
+        
+        // 收集所有元素
+        while ((elementMatch = regex.exec(processedSvg)) !== null) {
+            elementMatches.push({
+                match: elementMatch[0],
+                index: elementMatch.index
+            });
+        }
+        
+        // 从后向前替换
+        for (let i = elementMatches.length - 1; i >= 0; i--) {
+            let match = elementMatches[i].match;
+            let index = elementMatches[i].index;
+            
+            // 为第一个元素使用currentColor，第二个使用背景色
+            if (i === 0) {
+                match = match.replace(new RegExp(`<${elementType}`), `<${elementType} fill="currentColor"`);
+            } else {
+                match = match.replace(new RegExp(`<${elementType}`), `<${elementType} fill="var(--background-primary)"`);
+            }
+            
+            // 替换原始字符串中的元素
+            processedSvg = processedSvg.substring(0, index) + match + processedSvg.substring(index + elementMatches[i].match.length);
+        }
+    });
+    
+    // 规范化空格
+    processedSvg = processedSvg.trim();
+    processedSvg = processedSvg.replace(/\s+/g, ' ');
+    processedSvg = processedSvg.replace(/\s*(<[^>]+>)\s*/g, '$1');
+    
+    return processedSvg;
+}
+
 // Convert a user-supplied SVG to the correct format and size for addIcon
 function svgToIcon(value) {
     return __awaiter(this, void 0, void 0, function* () {
@@ -9915,6 +10021,61 @@ class IconSwapperSettingsTab extends obsidian.PluginSettingTab {
                     });
                 });
                 
+                // 为每个图标创建一个隐藏的文件输入元素
+                const fileInput = iconSetting.controlEl.createEl('input', {
+                    attr: {
+                        type: 'file',
+                        accept: '.svg',
+                        style: 'display: none;'
+                    }
+                });
+                
+                // 更新图标按钮
+                iconSetting.addButton(button => {
+                    button.setButtonText('Upload SVG')
+                        .setTooltip('Update this icon')
+                        .onClick(() => {
+                            fileInput.click();
+                        });
+                    // 添加CSS类名以应用特殊样式
+                    button.buttonEl.addClass('upload-svg-btn');
+                });
+                
+                // 处理文件选择
+                fileInput.addEventListener('change', (event) => __awaiter(this, void 0, void 0, function* () {
+                    const file = event.target.files[0];
+                    if (file && file.type === 'image/svg+xml') {
+                        const reader = new FileReader();
+                        reader.onload = (e) => __awaiter(this, void 0, void 0, function* () {
+                            let svgContentProcessed = e.target.result;
+                            // 智能处理SVG中的fill属性，以确保图标能正确显示在Image-mask中
+                            // 解析SVG内容，区分不同层级的路径
+                            svgContentProcessed = processSvgContent(svgContentProcessed);
+                            
+                            if (svgContentProcessed && validSvgRegEx.test(svgContentProcessed)) {
+                                try {
+                                    // 更新图标
+                                    const success = yield this.plugin.iconManager.addCustomIcon(iconName, svgContentProcessed);
+                                    if (success) {
+                                        new obsidian.Notice(`Icon ${iconName} has been updated.`);
+                                        this.refreshCustomIcons(); // 刷新自定义图标部分
+                                    } else {
+                                        new obsidian.Notice('Failed to update icon.');
+                                    }
+                                } catch (error) {
+                                    console.error('Error updating custom icon:', error);
+                                    new obsidian.Notice('Error updating custom icon.');
+                                }
+                            } else {
+                                new obsidian.Notice('Please select a valid SVG file.');
+                            }
+                        });
+                        reader.readAsText(file);
+                    } else if (file) {
+                        new obsidian.Notice('Please select a valid SVG file.');
+                    }
+                }));
+                
                 // 删除按钮
                 iconSetting.addButton(button => {
                     button.setIcon('trash')
@@ -9924,6 +10085,7 @@ class IconSwapperSettingsTab extends obsidian.PluginSettingTab {
                             new obsidian.Notice(`Icon ${iconName} has been deleted.`);
                             this.refreshCustomIcons(); // 只刷新自定义图标部分
                         }));
+                    button.buttonEl.addClass('delete-svg-btn');
                 });
             }
         }
@@ -9988,12 +10150,49 @@ class IconSwapperSettingsTab extends obsidian.PluginSettingTab {
                 .setValue('');
         });
         
-        // SVG内容输入框
-        let iconSvgInput;
-        addIconSetting.addTextArea(textarea => {
-            iconSvgInput = textarea;
-            textarea.setPlaceholder('<svg viewBox="0 0 100 100">...</svg>')
-                .setValue('');
+        // SVG上传按钮替换原来的文本区域
+        let svgFileInput;
+        let svgContent = '';
+        
+        // 创建一个隐藏的文件输入元素
+        const fileInput = addIconSetting.controlEl.createEl('input', {
+            attr: {
+                type: 'file',
+                accept: '.svg',
+                style: 'display: none;'
+            }
+        });
+        
+        // 创建上传按钮
+        addIconSetting.addButton(button => {
+            button.setButtonText('Upload SVG')
+                .setCta()
+                .onClick(() => {
+                    fileInput.click();
+                });
+            // 添加CSS类名以应用特殊样式
+            button.buttonEl.addClass('upload-svg-btn');
+        });
+        
+        // 处理文件选择
+        fileInput.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (file && file.type === 'image/svg+xml') {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    let svgContentProcessed = e.target.result;
+                    // 智能处理SVG中的fill属性，以确保图标能正确显示在Image-mask中
+                    // 解析SVG内容，区分不同层级的路径
+                    svgContentProcessed = processSvgContent(svgContentProcessed);
+                    
+                    svgContent = svgContentProcessed;
+                    new obsidian.Notice(`SVG file "${file.name}" loaded successfully.`);
+                };
+                reader.readAsText(file);
+            } else if (file) {
+                new obsidian.Notice('Please select a valid SVG file.');
+                svgContent = '';
+            }
         });
         
         // 添加按钮
@@ -10002,7 +10201,7 @@ class IconSwapperSettingsTab extends obsidian.PluginSettingTab {
                 .setCta()
                 .onClick(() => __awaiter(this, void 0, void 0, function* () {
                     const name = iconNameInput.getValue().trim();
-                    const svg = iconSvgInput.getValue().trim();
+                    const svg = svgContent.trim();
                     
                     if (!name) {
                         new obsidian.Notice('Please enter the icon name');
@@ -10024,7 +10223,9 @@ class IconSwapperSettingsTab extends obsidian.PluginSettingTab {
                         if (success) {
                             new obsidian.Notice(`Icon ${name} successful added.`);
                             iconNameInput.setValue('');
-                            iconSvgInput.setValue('');
+                            svgContent = ''; // 清空SVG内容
+                            // 重置文件输入元素
+                            fileInput.value = '';
                             this.refreshCustomIcons(); // 只刷新自定义图标部分
                         } else {
                             new obsidian.Notice('Add custom icon fail.');
