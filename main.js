@@ -9547,9 +9547,19 @@ function processSvgContent(svgContent) {
         return match;
     });
     
+    // 保存 defs 部分，以便后续恢复
+    let defsContent = '';
+    const defsRegex = /<defs[^>]*>([\s\S]*?)<\/defs>/g;
+    let defsMatch = defsRegex.exec(processedSvg);
+    if (defsMatch) {
+        defsContent = defsMatch[0];
+        // 临时移除 defs 部分，以避免它被后续处理
+        processedSvg = processedSvg.replace(defsMatch[0], '<!-- DEFS_PLACEHOLDER -->');
+    }
+    
     // 预处理：移除所有元素中的fill和fill-rule属性
     // 这样可以确保无论SVG中是否已经有fill属性，我们都能正确应用我们的颜色设置
-    processedSvg = processedSvg.replace(/<(path|rect|circle|ellipse|line|polyline|polygon)[^>]*>/g, function(match) {
+    processedSvg = processedSvg.replace(/<(path|rect|circle|ellipse|line|polyline|polygon|g)[^>]*>/g, function(match) {
         // 移除所有形式的fill属性
         match = match.replace(/\s+fill\s*=\s*["'][^"']*["']/g, '');
         match = match.replace(/\s+fill\s*=\s*[^\s>\/>]*/g, '');
@@ -9591,7 +9601,7 @@ function processSvgContent(svgContent) {
     }
     
     // 同样处理其他可能的SVG元素
-    const elementTypes = ['rect', 'circle', 'ellipse', 'line', 'polyline', 'polygon'];
+    const elementTypes = ['rect', 'circle', 'ellipse', 'line', 'polyline', 'polygon', 'g'];
     elementTypes.forEach(elementType => {
         const regex = new RegExp(`<${elementType}[^>]*>`, 'g');
         let elementMatches = [];
@@ -9626,6 +9636,11 @@ function processSvgContent(svgContent) {
     processedSvg = processedSvg.trim();
     processedSvg = processedSvg.replace(/\s+/g, ' ');
     processedSvg = processedSvg.replace(/\s*(<[^>]+>)\s*/g, '$1');
+    
+    // 恢复 defs 部分
+    if (defsContent) {
+        processedSvg = processedSvg.replace('<!-- DEFS_PLACEHOLDER -->', defsContent);
+    }
     
     return processedSvg;
 }
