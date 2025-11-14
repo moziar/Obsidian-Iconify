@@ -2,7 +2,7 @@
 [![GitHub Release](https://img.shields.io/github/v/release/moziar/Obsidian-Iconify)](https://github.com/moziar/Obsidian-Iconify/releases/latest)
 [![Total Downloads](https://img.shields.io/github/downloads/moziar/Obsidian-Iconify/total?label=Downloads)](https://github.com/moziar/Obsidian-Iconify/releases)
 [![Latest Downloads](https://img.shields.io/github/downloads/moziar/Obsidian-Iconify/latest/total?label=Latest%20Downloads)](https://github.com/moziar/Obsidian-Iconify/releases/latest)
-[![Last Commit](https://img.shields.io/github/last-commit/moziar/Obsidian-Iconify?label=Last%20Commit)](https://github.com/moziar/Obsidian-Iconify/commits/master)
+[![Last Commit](https://img.shields.io/github/last-commit/moziar/Obsidian-Iconify?label=Last%20Commit)](https://github.com/moziar/Obsidian-Iconify/commits/main)
 
 Add custom icon to Obsidian and allow swapping out default icons
 
