@@ -10,7 +10,7 @@ Add custom icon to Obsidian and allow swapping out default icons
 
 ## Usage
 
-This plugin introduces support for custom icons through unique `iconId` identifiers. This enables seamless integration with other plugins like [Callout Manager](https://github.com/eth-p/obsidian-callout-manager) and [Commander](https://github.com/phibr0/obsidian-commander).
+This plugin introduces support for custom icons through unique `iconId` identifiers. This enables seamless integration with other plugins like [Callout Manager](https://github.com/eth-p/obsidian-callout-manager), [Commander](https://github.com/phibr0/obsidian-commander) and [Better Properties](https://github.com/unxok/obsidian-better-properties).
 
 
 
