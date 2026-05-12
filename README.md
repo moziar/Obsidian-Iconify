@@ -19,15 +19,15 @@ This plugin introduces support for custom icons through unique `iconId` identifi
 
 
 ## Installation
+### From Obsidian Community (Recommended)
+Open the Community Plugins tab in the settings and search for "Iconify" (or click [here](https://obsidian.md/plugins?id=iconify)).
 
+### Manual Installation
 Use the [BRAT](https://github.com/TfTHacker/obsidian42-brat) to install this plugin.
-
-
 
 1. Install [BRAT](https://obsidian.md/plugins?id=obsidian42-brat) Obsidian plugin
 2. Use `BRAT: Plugins: Add a beta plugin for testing` command to install a new plugin 
 3. Enter `moziar/Obsidian-Iconify` on the popup window
-
 4. Enjoy
 
 
@@ -35,7 +35,6 @@ Use the [BRAT](https://github.com/TfTHacker/obsidian42-brat) to install this plu
 ## Mentioned
 
 - https://github.com/eth-p/obsidian-callout-manager/issues/3
-
 - https://github.com/phibr0/obsidian-commander/issues/59
 
 
