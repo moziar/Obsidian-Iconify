@@ -21,6 +21,8 @@ jobs:
         run: |
           npm ci
           npm run build
+      - name: Lint
+        run: npm run lint
       - name: Generate artifact attestation
         uses: actions/attest-build-provenance@v2
         with:
