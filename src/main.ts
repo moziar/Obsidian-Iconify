@@ -537,6 +537,7 @@ class IconSwapperSettingsTab extends PluginSettingTab {
       // Import/Export/Revert
       {
         name: "Import/Export",
+        desc: "Import or export icon configuration",
         render: (setting) => {
           setting.controlEl.createEl(
             "button",
