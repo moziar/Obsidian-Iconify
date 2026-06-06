@@ -31,11 +31,16 @@ export function scalePath(
   const o = Object.assign({}, node);
   const { scale: s } = scaleOptions || { scale: 1 };
   if (/(rect|circle|ellipse|polygon|polyline|line|path)/.test(o.name)) {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
     const path = toPath(o);
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
     const parseD = pathParse(path);
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
     const scaleD = scale(parseD, scaleOptions);
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
     const d = pathStringify(scaleD);
     o.attributes = Object.assign({}, o.attributes, {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       d,
     });
     for (const attr in o.attributes) {
@@ -58,7 +63,7 @@ export function scalePath(
       o.attributes.stroke = "currentColor";
     o.name = "path";
   } else if (o.children && Array.isArray(o.children)) {
-    const _scale = (c: any) => scalePath(c, scaleOptions);
+    const _scale = (c: INode) => scalePath(c, scaleOptions);
     o.children = o.children.map(_scale);
   }
   return o;
@@ -77,7 +82,8 @@ export function getDefaultIconSVG(name: string) {
 export function replaceIconSVG(name: string, content: string) {
   addIcon(name, content);
   // Replace any icons that already exist in the dom
-  document.querySelectorAll(`svg.${name}`).forEach((el) => {
+  activeDocument.querySelectorAll(`svg.${name}`).forEach((el) => {
+    // eslint-disable-next-line no-unsanitized/property
     el.innerHTML = content;
   });
 }
@@ -120,10 +126,10 @@ export function processSvgContent(svgContent: string): string {
     function (match) {
       // 移除所有形式的fill属性
       match = match.replace(/\s+fill\s*=\s*["'][^"']*["']/g, "");
-      match = match.replace(/\s+fill\s*=\s*[^\s>\/>]*/g, "");
+      match = match.replace(/\s+fill\s*=\s*[^\s>/]*/g, "");
       // 移除所有形式的fill-rule属性
       match = match.replace(/\s+fill-rule\s*=\s*["'][^"']*["']/g, "");
-      match = match.replace(/\s+fill-rule\s*=\s*[^\s>\/>]*/g, "");
+      match = match.replace(/\s+fill-rule\s*=\s*[^\s>/]*/g, "");
       return match;
     }
   );

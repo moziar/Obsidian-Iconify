@@ -219,3 +219,8 @@
 .icon-swapper-preview-error {
   color: var(--text-error);
 }
+
+.icon-swapper-svg-textarea {
+  width: 100%;
+  min-height: 80px;
+}
