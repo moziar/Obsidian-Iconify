@@ -469,6 +469,53 @@ class UpdateCustomIconModal extends Modal {
   }
 }
 
+// ========== Confirm Modal ==========
+
+class ConfirmModal extends Modal {
+  title: string;
+  message: string;
+  onConfirm: () => void;
+
+  constructor(
+    app: App,
+    title: string,
+    message: string,
+    onConfirm: () => void
+  ) {
+    super(app);
+    this.title = title;
+    this.message = message;
+    this.onConfirm = onConfirm;
+  }
+
+  onOpen() {
+    let { contentEl } = this;
+    contentEl.createEl("h3", { text: this.title });
+    contentEl.createEl("p", { text: this.message });
+
+    new Setting(contentEl).then((setting) => {
+      setting.addButton((button) => {
+        button
+          .setButtonText("Delete")
+          .setWarning()
+          .onClick(() => {
+            this.onConfirm();
+            this.close();
+          });
+      });
+      setting.addButton((button) => {
+        button.setButtonText("Cancel").onClick(() => this.close());
+      });
+      setting.nameEl.remove();
+    });
+  }
+
+  onClose() {
+    let { contentEl } = this;
+    contentEl.empty();
+  }
+}
+
 // ========== Settings Tab ==========
 
 class IconSwapperSettingsTab extends PluginSettingTab {
@@ -545,8 +592,17 @@ class IconSwapperSettingsTab extends PluginSettingTab {
           const names = Object.keys(this.plugin.iconManager.customIcons);
           const name = names[idx];
           if (name) {
-            await this.plugin.iconManager.removeCustomIcon(name);
-            new Notice(`Icon ${name} deleted.`);
+            new ConfirmModal(
+              this.app,
+              "Delete icon",
+              `Are you sure you want to delete the icon "${name}"?`,
+              async () => {
+                await this.plugin.iconManager.removeCustomIcon(name);
+                new Notice(`Icon ${name} deleted.`);
+                this.update();
+              }
+            ).open();
+            // 恢复列表，等确认后再真正删除
             this.update();
           }
         },
