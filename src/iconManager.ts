@@ -130,6 +130,24 @@ export class IconManager {
     return false;
   }
 
+  // 删除所有自定义图标
+  async removeAllCustomIcons() {
+    this.customIcons = {};
+    await this.saveData();
+  }
+
+  // 批量导入自定义图标
+  async setAllCustomIcons(icons: Icons) {
+    for (const name in icons) {
+      const svg = (icons[name] || "").trim();
+      if (!svg || !validSvgRegEx.test(svg)) continue;
+      const iconSVG = (await svgToIcon(svg)) || "";
+      addIcon(name, iconSVG);
+      this.customIcons[name] = iconSVG;
+    }
+    await this.saveData();
+  }
+
   async setAll(icons: Icons) {
     for (const icon in icons) {
       const svg = (icons[icon] || "").trim();

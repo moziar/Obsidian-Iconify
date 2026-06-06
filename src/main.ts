@@ -56,38 +56,34 @@ class ExportModal extends Modal {
     let { contentEl, modalEl } = this;
     modalEl.addClass("modal-icon-swapper");
 
+    const wrapIcons = (icons: { [k: string]: string }) =>
+      Object.keys(icons).reduce<{ [k: string]: string }>((acc, name) => {
+        acc[name] = `<svg viewBox="0 0 100 100">${icons[name]}</svg>`;
+        return acc;
+      }, {});
+
+    const output = stringify({
+      icons: wrapIcons(this.plugin.iconManager.icons),
+      customIcons: wrapIcons(this.plugin.iconManager.customIcons),
+    });
+
     new Setting(contentEl)
       .setName("Export icon configuration")
       .then((setting) => {
-        const wrappedIcons = Object.keys(
-          this.plugin.iconManager.icons
-        ).reduce<{ [k: string]: string }>((icons, currentIcon) => {
-          icons[currentIcon] = `<svg viewBox="0 0 100 100">${this.plugin.iconManager.icons[currentIcon]}</svg>`;
-          return icons;
-        }, {});
-
-        const output = stringify(wrappedIcons);
-
         setting.controlEl.createEl(
           "a",
           { cls: "icon-swapper-copy", text: "Copy to clipboard", href: "#" },
           (copyButton) => {
-            new TextAreaComponent(contentEl)
-              .setValue(output)
-              .then((textarea) => {
-                textarea.inputEl.setAttr("disabled", true);
-                copyButton.addEventListener("click", (e) => {
-                  e.preventDefault();
-                  textarea.inputEl.select();
-                  document.execCommand("copy");
-                  copyButton.addClass("success");
-                  setTimeout(() => {
-                    if (copyButton.parentNode) {
-                      copyButton.removeClass("success");
-                    }
-                  }, 2000);
-                });
-              });
+            copyButton.addEventListener("click", async (e) => {
+              e.preventDefault();
+              await navigator.clipboard.writeText(output);
+              copyButton.addClass("success");
+              setTimeout(() => {
+                if (copyButton.parentNode) {
+                  copyButton.removeClass("success");
+                }
+              }, 2000);
+            });
           }
         );
 
@@ -100,6 +96,11 @@ class ExportModal extends Modal {
           },
         });
       });
+
+    new TextAreaComponent(contentEl)
+      .setValue(output)
+      .setDisabled(true)
+      .then((ta) => ta.inputEl.addClass("iconify-config-textarea"));
   }
 
   onClose() {
@@ -134,9 +135,16 @@ class ImportModal extends Modal {
       const importAndClose = async (str: string) => {
         if (str) {
           try {
-            const importedSettings = parse(str);
+            const parsed = parse(str);
+            // 兼容旧版扁平格式和新的结构化格式
+            const hasIconsKey = parsed && typeof parsed.icons === "object";
+            const icons = hasIconsKey ? parsed.icons : parsed;
+            const customIcons = parsed?.customIcons || {};
+
             await this.plugin.iconManager.revertAll({ shouldSave: false });
-            await this.plugin.iconManager.setAll(importedSettings);
+            await this.plugin.iconManager.removeAllCustomIcons();
+            await this.plugin.iconManager.setAll(icons);
+            await this.plugin.iconManager.setAllCustomIcons(customIcons);
             this.plugin.settingsTab.update();
             this.close();
           } catch (e) {
@@ -186,6 +194,7 @@ class ImportModal extends Modal {
       new TextAreaComponent(contentEl)
         .setPlaceholder("Paste config here...")
         .then((ta) => {
+          ta.inputEl.addClass("iconify-config-textarea");
           new ButtonComponent(contentEl)
             .setButtonText("Save")
             .onClick(async () => {

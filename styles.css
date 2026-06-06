@@ -139,6 +139,10 @@
   overflow-x: scroll;
 }
 
+.modal-icon-swapper textarea.iconify-config-textarea {
+  min-height: 200px;
+}
+
 .modal-icon-swapper .setting-item {
   align-items: center;
 }
