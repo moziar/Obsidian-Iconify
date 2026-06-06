@@ -1,6 +1,6 @@
-.icon-swapper textarea {
+.icon-swapper .setting-item .setting-item-control textarea {
   flex-grow: 1;
-  font-family: var(--font-monospace) !important;
+  font-family: var(--font-monospace);
   font-size: 12px;
 }
 
@@ -16,10 +16,10 @@
   gap: 10px;
 }
 
-.icon-swapper .setting-item-control button {
+.icon-swapper .setting-item:not(.setting-item-heading) .setting-item-control button {
   flex: 0 0 auto;
-  box-shadow: none !important; /* 取消阴影 */
-  border: 1px solid var(--background-modifier-border);  /* 边框 */
+  box-shadow: none;
+  border: 1px solid var(--background-modifier-border);
 }
 
 /* 特别设置Upload SVG按钮样式，使其视觉层级更低 */
@@ -122,10 +122,10 @@
   flex-direction: column;
 }
 
-.modal-icon-swapper textarea {
+.modal-icon-swapper .modal-content textarea {
   display: block;
   width: 100%;
-  font-family: var(--font-monospace) !important;
+  font-family: var(--font-monospace);
   font-size: 12px;
   white-space: pre;
   overflow-wrap: normal;
