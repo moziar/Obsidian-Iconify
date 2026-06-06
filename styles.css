@@ -79,41 +79,34 @@
   z-index: -1;
 }
 
-.icon-swapper-import-label {
-  cursor: pointer;
-  color: var(--text-accent);
-  text-decoration: underline;
-}
-
-.icon-swapper-import-label:hover {
-  color: var(--text-accent-hover);
-}
-
+.icon-swapper-import-label,
 .icon-swapper-export,
-.icon-swapper-import {
-  display: inline-block;
-  margin-right: 10px;
-}
-
+.icon-swapper-import,
 .icon-swapper-copy,
 .icon-swapper-download {
-  position: relative;
-  display: inline-block;
-  margin-left: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-right: 10px;
+  padding: 4px 12px;
+  background-color: var(--interactive-normal);
+  color: var(--text-normal);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--button-radius);
+  font-size: var(--font-ui-small);
+  cursor: pointer;
 }
 
-.icon-swapper-copy:before {
+.icon-swapper-import-label:hover,
+.icon-swapper-export:hover,
+.icon-swapper-import:hover,
+.icon-swapper-copy:hover,
+.icon-swapper-download:hover {
+  background-color: var(--interactive-hover);
+}
+
+.icon-swapper-copy.success {
   color: var(--interactive-success);
-  content: "✓";
-  position: absolute;
-  left: -18px;
-  font-weight: bold;
-  opacity: 0;
-  transition: 150ms opacity ease-in-out;
-}
-
-.icon-swapper-copy.success:before {
-  opacity: 1;
 }
 
 .modal-icon-swapper {

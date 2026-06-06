@@ -68,14 +68,15 @@ class ExportModal extends Modal {
     });
 
     new Setting(contentEl)
-      .setName("Export icon configuration")
+      .setName("Export configuration")
       .then((setting) => {
         setting.controlEl.createEl(
-          "a",
-          { cls: "icon-swapper-copy", text: "Copy to clipboard", href: "#" },
+          "button",
+          { cls: "icon-swapper-copy" },
           (copyButton) => {
-            copyButton.addEventListener("click", async (e) => {
-              e.preventDefault();
+            setIcon(copyButton, "copy");
+            copyButton.appendText(" Copy");
+            copyButton.addEventListener("click", async () => {
               await navigator.clipboard.writeText(output);
               copyButton.addClass("success");
               setTimeout(() => {
@@ -87,13 +88,17 @@ class ExportModal extends Modal {
           }
         );
 
-        setting.controlEl.createEl("a", {
+        setting.controlEl.createEl("button", {
           cls: "icon-swapper-download",
-          text: "Download",
-          attr: {
-            download: "icons.yml",
-            href: `data:text/yaml;charset=utf-8,${encodeURIComponent(output)}`,
-          },
+        }, (el) => {
+          setIcon(el, "download");
+          el.appendText(" Download");
+          el.addEventListener("click", () => {
+            const a = document.createElement("a");
+            a.download = "icons.yml";
+            a.href = `data:text/yaml;charset=utf-8,${encodeURIComponent(output)}`;
+            a.click();
+          });
         });
       });
 
@@ -122,86 +127,78 @@ class ImportModal extends Modal {
     modalEl.addClass("modal-icon-swapper");
 
     new Setting(contentEl)
-      .setName("Import icon configuration")
-      .setDesc("Warning: this will override any existing icon configuration");
-
-    new Setting(contentEl).then((setting) => {
-      const errorSpan = createSpan({
-        cls: "icon-swapper-import-error",
-        text: "Error importing config",
-      });
-      setting.nameEl.appendChild(errorSpan);
-
-      const importAndClose = async (str: string) => {
-        if (str) {
-          try {
-            const parsed = parse(str);
-            // 兼容旧版扁平格式和新的结构化格式
-            const hasIconsKey = parsed && typeof parsed.icons === "object";
-            const icons = hasIconsKey ? parsed.icons : parsed;
-            const customIcons = parsed?.customIcons || {};
-
-            await this.plugin.iconManager.revertAll({ shouldSave: false });
-            await this.plugin.iconManager.removeAllCustomIcons();
-            await this.plugin.iconManager.setAll(icons);
-            await this.plugin.iconManager.setAllCustomIcons(customIcons);
-            this.plugin.settingsTab.update();
-            this.close();
-          } catch (e) {
-            errorSpan.addClass("active");
-            errorSpan.setText(`Error importing icon settings: ${e}`);
-          }
-        } else {
-          errorSpan.addClass("active");
-          errorSpan.setText(`Error importing icon settings: config is empty`);
-        }
-      };
-
-      setting.controlEl.createEl(
-        "input",
-        {
-          cls: "icon-swapper-import-input",
-          attr: {
-            id: "icon-swapper-import-input",
-            name: "icon-swapper-import-input",
-            type: "file",
-            accept: ".yml",
+      .setName("Import configuration")
+      .setDesc("Warning: this will override any existing configuration")
+      .then((setting) => {
+        const fileInput = setting.controlEl.createEl(
+          "input",
+          {
+            cls: "icon-swapper-import-input",
+            attr: {
+              id: "icon-swapper-import-input",
+              name: "icon-swapper-import-input",
+              type: "file",
+              accept: ".yml",
+            },
           },
-        },
-        (importInput) => {
-          importInput.addEventListener("change", (e) => {
-            const reader = new FileReader();
-            reader.onload = async (e: ProgressEvent<FileReader>) => {
-              const result = e.target?.result;
-              if (result) {
-                await importAndClose(result.toString().trim());
+          (importInput) => {
+            importInput.addEventListener("change", (e) => {
+              const reader = new FileReader();
+              reader.onload = async (e: ProgressEvent<FileReader>) => {
+                const result = e.target?.result;
+                if (result) {
+                  await importAndClose(result.toString().trim());
+                }
+              };
+              const files = (e.target as HTMLInputElement).files;
+              if (files && files.length > 0) {
+                reader.readAsText(files[0]);
               }
-            };
-            const files = (e.target as HTMLInputElement).files;
-            if (files && files.length > 0) {
-              reader.readAsText(files[0]);
-            }
-          });
-        }
-      );
+            });
+          }
+        );
 
-      setting.controlEl.createEl("label", {
-        cls: "icon-swapper-import-label",
-        text: "Import from file",
-        attr: { for: "icon-swapper-import-input" },
+        setting.controlEl.createEl("button", {
+          cls: "icon-swapper-import-label",
+        }, (el) => {
+          setIcon(el, "file-up");
+          el.appendText(" Import from file");
+          el.addEventListener("click", () => fileInput.click());
+        });
       });
 
-      new TextAreaComponent(contentEl)
-        .setPlaceholder("Paste config here...")
-        .then((ta) => {
-          ta.inputEl.addClass("iconify-config-textarea");
-          new ButtonComponent(contentEl)
-            .setButtonText("Save")
-            .onClick(async () => {
-              await importAndClose(ta.getValue().trim());
-            });
-        });
-    });
+    const importAndClose = async (str: string) => {
+      if (str) {
+        try {
+          const parsed = parse(str);
+          const hasIconsKey = parsed && typeof parsed.icons === "object";
+          const icons = hasIconsKey ? parsed.icons : parsed;
+          const customIcons = parsed?.customIcons || {};
+
+          await this.plugin.iconManager.revertAll({ shouldSave: false });
+          await this.plugin.iconManager.removeAllCustomIcons();
+          await this.plugin.iconManager.setAll(icons);
+          await this.plugin.iconManager.setAllCustomIcons(customIcons);
+          this.plugin.settingsTab.update();
+          this.close();
+        } catch (e) {
+          new Notice(`Error importing icon settings: ${e}`);
+        }
+      } else {
+        new Notice("Error importing icon settings: config is empty");
+      }
+    };
+
+    new TextAreaComponent(contentEl)
+      .setPlaceholder("Or paste config here...")
+      .then((ta) => {
+        ta.inputEl.addClass("iconify-config-textarea");
+        new ButtonComponent(contentEl)
+          .setButtonText("Save")
+          .onClick(async () => {
+            await importAndClose(ta.getValue().trim());
+          });
+      });
   }
 
   onClose() {
@@ -542,21 +539,23 @@ class IconSwapperSettingsTab extends PluginSettingTab {
         name: "Import/Export",
         render: (setting) => {
           setting.controlEl.createEl(
-            "a",
-            { cls: "icon-swapper-import", text: "Import", href: "#" },
+            "button",
+            { cls: "icon-swapper-import" },
             (el) => {
-              el.addEventListener("click", (e) => {
-                e.preventDefault();
+              setIcon(el, "download");
+              el.appendText(" Import");
+              el.addEventListener("click", () => {
                 new ImportModal(this.app, this.plugin).open();
               });
             }
           );
           setting.controlEl.createEl(
-            "a",
-            { cls: "icon-swapper-export", text: "Export", href: "#" },
+            "button",
+            { cls: "icon-swapper-export" },
             (el) => {
-              el.addEventListener("click", (e) => {
-                e.preventDefault();
+              setIcon(el, "upload");
+              el.appendText(" Export");
+              el.addEventListener("click", () => {
                 new ExportModal(this.app, this.plugin).open();
               });
             }
