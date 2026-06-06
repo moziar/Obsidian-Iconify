@@ -550,6 +550,20 @@ class IconSwapperSettingsTab extends PluginSettingTab {
             this.update();
           }
         },
+        onReorder: async (oldIndex, newIndex) => {
+          const customIcons = this.plugin.iconManager.customIcons;
+          const names = Object.keys(customIcons);
+          const [moved] = names.splice(oldIndex, 1);
+          names.splice(newIndex, 0, moved);
+          // 重建对象以保持新顺序
+          const reordered: Icons = {};
+          for (const name of names) {
+            reordered[name] = customIcons[name];
+          }
+          this.plugin.iconManager.customIcons = reordered;
+          await this.plugin.iconManager.saveData();
+          this.update();
+        },
         items: Object.keys(this.plugin.iconManager.customIcons).map(
           (iconName) => ({
             name: iconName,
