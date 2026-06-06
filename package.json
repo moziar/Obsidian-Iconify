@@ -1,0 +1,30 @@
+{
+  "name": "obsidian-iconify",
+  "version": "0.0.9",
+  "description": "Add custom icon and allow swapping out default icons.",
+  "main": "main.js",
+  "type": "module",
+  "scripts": {
+    "dev": "rollup --config rollup.config.js -w",
+    "build": "rollup --config rollup.config.js --environment BUILD:production"
+  },
+  "keywords": [],
+  "author": "Moz",
+  "license": "GPL-3.0",
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "^24.0.0",
+    "@rollup/plugin-node-resolve": "^15.0.0",
+    "@rollup/plugin-typescript": "^11.0.0",
+    "@types/node": "^18.0.0",
+    "obsidian": "https://github.com/obsidianmd/obsidian-api/tarball/master",
+    "rollup": "^3.0.0",
+    "tslib": "^2.5.0",
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "element-to-path": "^1.2.0",
+    "svg-path-tools": "^1.0.0",
+    "svgson": "^5.2.1",
+    "yaml": "^1.10.2"
+  }
+}

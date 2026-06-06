@@ -56,15 +56,14 @@
 
 .icon-swapper-container {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  justify-content: center;
+  gap: 8px;
   line-height: 1;
 }
 
 .icon-swapper-icon {
   display: flex;
-  margin-bottom: 10px;
 }
 
 .icon-swapper-name {
@@ -80,45 +79,38 @@
   z-index: -1;
 }
 
-.icon-swapper-import-label {
-  cursor: pointer;
-  color: var(--text-accent);
-  text-decoration: underline;
-}
-
-.icon-swapper-import-label:hover {
-  color: var(--text-accent-hover);
-}
-
+.icon-swapper-import-label,
 .icon-swapper-export,
-.icon-swapper-import {
-  display: inline-block;
-  margin-right: 10px;
-}
-
+.icon-swapper-import,
 .icon-swapper-copy,
 .icon-swapper-download {
-  position: relative;
-  display: inline-block;
-  margin-left: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-right: 10px;
+  padding: 4px 12px;
+  background-color: var(--interactive-normal);
+  color: var(--text-normal);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--button-radius);
+  font-size: var(--font-ui-small);
+  cursor: pointer;
 }
 
-.icon-swapper-copy:before {
+.icon-swapper-import-label:hover,
+.icon-swapper-export:hover,
+.icon-swapper-import:hover,
+.icon-swapper-copy:hover,
+.icon-swapper-download:hover {
+  background-color: var(--interactive-hover);
+}
+
+.icon-swapper-copy.success {
   color: var(--interactive-success);
-  content: "✓";
-  position: absolute;
-  left: -18px;
-  font-weight: bold;
-  opacity: 0;
-  transition: 150ms opacity ease-in-out;
-}
-
-.icon-swapper-copy.success:before {
-  opacity: 1;
 }
 
 .modal-icon-swapper {
-  height: 70vh;
+  max-height: 70vh;
   display: flex;
   flex-direction: column;
 }
@@ -133,7 +125,6 @@
 .modal-icon-swapper textarea {
   display: block;
   width: 100%;
-  height: 100%;
   font-family: var(--font-monospace) !important;
   font-size: 12px;
   white-space: pre;
@@ -141,12 +132,12 @@
   overflow-x: scroll;
 }
 
-.modal-icon-swapper .setting-item {
-  align-items: flex-start;
+.modal-icon-swapper textarea.iconify-config-textarea {
+  min-height: 200px;
 }
 
-.modal-icon-swapper button {
-  margin: 10px 0 0;
+.modal-icon-swapper .setting-item {
+  align-items: center;
 }
 
 .icon-swapper-import-error {
@@ -158,29 +149,73 @@
   display: block;
 }
 
-/* 自定义图标部分样式 */
-.custom-icon-container {
-  margin-bottom: 20px;
-  border: 1px solid var(--background-modifier-border);
-  border-radius: 5px;
-  padding: 10px;
-  background-color: var(--background-secondary);
-}
-
-.icon-swapper h3 {
-  margin-top: 30px;
-  margin-bottom: 10px;
-  font-size: 18px;
-  font-weight: 600;
-  color: var(--text-normal);
-  border-bottom: 1px solid var(--background-modifier-border);
-  padding-bottom: 5px;
-}
-
+/* 自定义图标 Current Icon 子标题样式 */
 .icon-swapper h4 {
   margin-top: 20px;
   margin-bottom: 10px;
   font-size: 16px;
   font-weight: 500;
   color: var(--text-normal);
+}
+
+/* 返回按钮 */
+.icon-swapper-back {
+  color: var(--text-accent);
+  text-decoration: none;
+  font-size: 14px;
+}
+
+.icon-swapper-back:hover {
+  color: var(--text-accent-hover);
+}
+
+/* 搜索框 */
+.icon-swapper-search {
+  margin-bottom: 16px;
+}
+
+.icon-swapper-search-input {
+  width: 100%;
+  padding: 6px 12px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 4px;
+  background: var(--background-modifier-form-field);
+  color: var(--text-normal);
+  font-size: 14px;
+  outline: none;
+}
+
+.icon-swapper-search-input:focus {
+  border-color: var(--interactive-accent);
+  box-shadow: 0 0 0 2px rgba(var(--interactive-accent-rgb), 0.2);
+}
+
+/* 无搜索结果 */
+.icon-swapper-no-results {
+  color: var(--text-muted);
+  text-align: center;
+  padding: 20px;
+}
+
+/* SVG 预览区域 */
+.icon-swapper-preview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 80px;
+  padding: 16px;
+  margin: 8px 0;
+  border: 1px dashed var(--background-modifier-border);
+  border-radius: 6px;
+  background: var(--background-secondary);
+  color: var(--text-muted);
+}
+
+.icon-swapper-preview svg {
+  width: 48px;
+  height: 48px;
+}
+
+.icon-swapper-preview-error {
+  color: var(--text-error);
 }
