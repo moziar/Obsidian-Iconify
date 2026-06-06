@@ -575,7 +575,7 @@ class IconSwapperSettingsTab extends PluginSettingTab {
       // Custom Icon — list
       {
         type: "list",
-        heading: "Custom Icon",
+        heading: "Custom icon",
         emptyState: "No custom icons added yet.",
         addItem: {
           name: "Add icon",
@@ -692,7 +692,7 @@ class IconSwapperSettingsTab extends PluginSettingTab {
       // Default Icon 二级页面
       {
         type: "page",
-        name: "Default Icon",
+        name: "Default icon",
         desc: "Replace Obsidian's built-in UI icons",
         page: () => new DefaultIconsPage(this.plugin),
       },
