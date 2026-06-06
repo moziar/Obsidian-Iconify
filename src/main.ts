@@ -6,13 +6,12 @@ import {
   Plugin,
   PluginSettingTab,
   Setting,
-  SettingDefinition,
   SettingDefinitionItem,
   TextAreaComponent,
+  TextComponent,
   setIcon,
 } from "obsidian";
 import { parse, stringify } from "yaml";
-import { createIconSetting } from "./createIconSetting";
 import { DefaultIconsPage } from "./defaultIconsPage";
 import { IconManager, Icons, validSvgRegEx } from "./iconManager";
 import { processSvgContent } from "./svg";
@@ -26,19 +25,19 @@ export default class IconSwapperPlugin extends Plugin {
     // 因为 addSettingTab 会立即调用 getSettingDefinitions() 做搜索索引
     const saveIcons = async (data: { icons: Icons; customIcons: Icons }) =>
       await this.saveData(data);
-    const loadIcons = async () => Object.assign({}, await this.loadData());
+    const loadIcons = async () => Object.assign({}, await this.loadData()) as { icons?: Icons; customIcons?: Icons } | Icons;
     this.iconManager = new IconManager(saveIcons, loadIcons);
     await this.iconManager.loadIcons();
 
     this.settingsTab = new IconSwapperSettingsTab(this.app, this);
     this.addSettingTab(this.settingsTab);
 
-    document.body.addClass("icon-swapper-enabled");
+    activeDocument.body.addClass("icon-swapper-enabled");
   }
 
   onunload() {
-    this.iconManager.revertAll({ shouldSave: false });
-    document.body.removeClass("icon-swapper-enabled");
+    void this.iconManager.revertAll({ shouldSave: false });
+    activeDocument.body.removeClass("icon-swapper-enabled");
   }
 }
 
@@ -76,14 +75,16 @@ class ExportModal extends Modal {
           (copyButton) => {
             setIcon(copyButton, "copy");
             copyButton.appendText(" Copy");
-            copyButton.addEventListener("click", async () => {
-              await navigator.clipboard.writeText(output);
-              copyButton.addClass("success");
-              setTimeout(() => {
-                if (copyButton.parentNode) {
-                  copyButton.removeClass("success");
-                }
-              }, 2000);
+            copyButton.addEventListener("click", () => {
+              void (async () => {
+                await navigator.clipboard.writeText(output);
+                copyButton.addClass("success");
+                window.setTimeout(() => {
+                  if (copyButton.parentNode) {
+                    copyButton.removeClass("success");
+                  }
+                }, 2000);
+              })();
             });
           }
         );
@@ -94,7 +95,7 @@ class ExportModal extends Modal {
           setIcon(el, "download");
           el.appendText(" Download");
           el.addEventListener("click", () => {
-            const a = document.createElement("a");
+            const a = activeDocument.createElement("a");
             a.download = "icons.yml";
             a.href = `data:text/yaml;charset=utf-8,${encodeURIComponent(output)}`;
             a.click();
@@ -146,8 +147,8 @@ class ImportModal extends Modal {
               const reader = new FileReader();
               reader.onload = async (e: ProgressEvent<FileReader>) => {
                 const result = e.target?.result;
-                if (result) {
-                  await importAndClose(result.toString().trim());
+                if (typeof result === "string") {
+                  await importAndClose(result.trim());
                 }
               };
               const files = (e.target as HTMLInputElement).files;
@@ -170,10 +171,10 @@ class ImportModal extends Modal {
     const importAndClose = async (str: string) => {
       if (str) {
         try {
-          const parsed = parse(str);
+          const parsed = parse(str) as Record<string, unknown>;
           const hasIconsKey = parsed && typeof parsed.icons === "object";
-          const icons = hasIconsKey ? parsed.icons : parsed;
-          const customIcons = parsed?.customIcons || {};
+          const icons = (hasIconsKey ? parsed.icons : parsed) as Icons;
+          const customIcons = (parsed?.customIcons || {}) as Icons;
 
           await this.plugin.iconManager.revertAll({ shouldSave: false });
           await this.plugin.iconManager.removeAllCustomIcons();
@@ -213,7 +214,7 @@ class AddCustomIconModal extends Modal {
   plugin: IconSwapperPlugin;
   onSave: (name: string, svg: string) => Promise<void>;
   private currentSvg = "";
-  private iconNameInput: any;
+  private iconNameInput!: TextComponent;
   private previewEl!: HTMLDivElement;
 
   constructor(
@@ -235,7 +236,7 @@ class AddCustomIconModal extends Modal {
     // Icon Name
     new Setting(contentEl).setName("Icon name").addText((text) => {
       this.iconNameInput = text;
-      text.setPlaceholder("e.g. my-icon").setValue("");
+      text.setPlaceholder("E.g. My-icon").setValue("");
     });
 
     // SVG source — Upload
@@ -269,8 +270,7 @@ class AddCustomIconModal extends Modal {
       new TextAreaComponent(contentEl)
         .setPlaceholder("<svg>...</svg>")
         .then((textarea) => {
-          textarea.inputEl.style.width = "100%";
-          textarea.inputEl.style.minHeight = "80px";
+          textarea.inputEl.addClass("icon-swapper-svg-textarea");
           textarea.onChange((value) => {
             const trimmed = value.trim();
             if (trimmed && validSvgRegEx.test(trimmed)) {
@@ -330,6 +330,7 @@ class AddCustomIconModal extends Modal {
     if (!this.previewEl) return;
     this.previewEl.empty();
     if (this.currentSvg && validSvgRegEx.test(this.currentSvg)) {
+      // eslint-disable-next-line no-unsanitized/property, @microsoft/sdl/no-inner-html
       this.previewEl.innerHTML = this.currentSvg;
     } else if (this.currentSvg) {
       this.previewEl.setText("Invalid SVG");
@@ -375,7 +376,7 @@ class UpdateCustomIconModal extends Modal {
       setting.controlEl.createDiv({ cls: "icon-swapper-icon" }, (icon) => {
         try {
           setIcon(icon, this.iconName);
-        } catch (e) {
+        } catch (_e) {
           icon.setText("?");
         }
       });
@@ -412,8 +413,7 @@ class UpdateCustomIconModal extends Modal {
       new TextAreaComponent(contentEl)
         .setPlaceholder("<svg>...</svg>")
         .then((textarea) => {
-          textarea.inputEl.style.width = "100%";
-          textarea.inputEl.style.minHeight = "80px";
+          textarea.inputEl.addClass("icon-swapper-svg-textarea");
           textarea.onChange((value) => {
             const trimmed = value.trim();
             if (trimmed && validSvgRegEx.test(trimmed)) {
@@ -460,6 +460,7 @@ class UpdateCustomIconModal extends Modal {
     if (!this.previewEl) return;
     this.previewEl.empty();
     if (this.currentSvg && validSvgRegEx.test(this.currentSvg)) {
+      // eslint-disable-next-line no-unsanitized/property, @microsoft/sdl/no-inner-html
       this.previewEl.innerHTML = this.currentSvg;
     } else if (this.currentSvg) {
       this.previewEl.setText("Invalid SVG");
@@ -503,7 +504,7 @@ class ConfirmModal extends Modal {
       setting.addButton((button) => {
         button
           .setButtonText("Delete")
-          .setWarning()
+          .setDestructive()
           .onClick(() => {
             this.onConfirm();
             this.close();
@@ -598,7 +599,7 @@ class IconSwapperSettingsTab extends PluginSettingTab {
             modal.open();
           },
         },
-        onDelete: async (idx) => {
+        onDelete: (idx) => {
           const names = Object.keys(this.plugin.iconManager.customIcons);
           const name = names[idx];
           if (name) {
@@ -606,29 +607,33 @@ class IconSwapperSettingsTab extends PluginSettingTab {
               this.app,
               "Delete icon",
               `Are you sure you want to delete the icon "${name}"?`,
-              async () => {
-                await this.plugin.iconManager.removeCustomIcon(name);
-                new Notice(`Icon ${name} deleted.`);
-                this.update();
+              () => {
+                void (async () => {
+                  await this.plugin.iconManager.removeCustomIcon(name);
+                  new Notice(`Icon ${name} deleted.`);
+                  this.update();
+                })();
               }
             ).open();
             // 恢复列表，等确认后再真正删除
             this.update();
           }
         },
-        onReorder: async (oldIndex, newIndex) => {
-          const customIcons = this.plugin.iconManager.customIcons;
-          const names = Object.keys(customIcons);
-          const [moved] = names.splice(oldIndex, 1);
-          names.splice(newIndex, 0, moved);
-          // 重建对象以保持新顺序
-          const reordered: Icons = {};
-          for (const name of names) {
-            reordered[name] = customIcons[name];
-          }
-          this.plugin.iconManager.customIcons = reordered;
-          await this.plugin.iconManager.saveData();
-          this.update();
+        onReorder: (oldIndex, newIndex) => {
+          void (async () => {
+            const customIcons = this.plugin.iconManager.customIcons;
+            const names = Object.keys(customIcons);
+            const [moved] = names.splice(oldIndex, 1);
+            names.splice(newIndex, 0, moved);
+            // 重建对象以保持新顺序
+            const reordered: Icons = {};
+            for (const name of names) {
+              reordered[name] = customIcons[name];
+            }
+            this.plugin.iconManager.customIcons = reordered;
+            await this.plugin.iconManager.saveData();
+            this.update();
+          })();
         },
         items: Object.keys(this.plugin.iconManager.customIcons).map(
           (iconName) => ({
@@ -645,7 +650,7 @@ class IconSwapperSettingsTab extends PluginSettingTab {
                     (icon) => {
                       try {
                         setIcon(icon, capturedName);
-                      } catch (e) {
+                      } catch {
                         icon.setText("?");
                       }
                     }
@@ -687,7 +692,7 @@ class IconSwapperSettingsTab extends PluginSettingTab {
               });
             },
           })
-        ) as SettingDefinition[],
+        ),
       },
 
       // Default Icon 二级页面

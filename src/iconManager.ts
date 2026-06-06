@@ -57,14 +57,17 @@ export class IconManager {
 
   async loadIcons() {
     const data = await this.load();
-    const icons = (data as any).icons || data; // 兼容旧版本数据格式
-    const customIcons = (data as any).customIcons || {};
+    const hasIconsKey = data && typeof (data as Record<string, unknown>).icons === "object";
+    const icons: Icons = hasIconsKey ? (data as { icons: Icons }).icons : (data as Icons) || {};
+    const customIcons: Icons = hasIconsKey && (data as Record<string, unknown>).customIcons
+      ? (data as { customIcons: Icons }).customIcons
+      : {};
 
     // 加载默认图标替换
     for (const icon in icons) {
       await this.setIcon({
         name: icon,
-        svg: (icons as Icons)[icon],
+        svg: icons[icon],
         shouldSave: false,
         isTrustedSource: true,
       });
@@ -174,7 +177,7 @@ export class IconManager {
   async revertAll(opts: { shouldSave?: boolean } = {}) {
     const { shouldSave = true } = opts;
     for (const icon in this.icons) {
-      this.revertIcon({ name: icon, shouldSave: false });
+      await this.revertIcon({ name: icon, shouldSave: false });
     }
     if (shouldSave) {
       await this.saveData();
