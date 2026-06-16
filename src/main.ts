@@ -526,7 +526,7 @@ class ConfirmModal extends Modal {
 // ========== Settings Tab ==========
 
 class IconSwapperSettingsTab extends PluginSettingTab {
-  icon: string = 'smile'
+  icon: string = 'smile';
   plugin: IconSwapperPlugin;
 
   constructor(app: App, plugin: IconSwapperPlugin) {
