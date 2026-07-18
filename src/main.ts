@@ -14,7 +14,7 @@ import {
 import { parse, stringify } from "yaml";
 import { DefaultIconsPage } from "./defaultIconsPage";
 import { IconManager, Icons, validSvgRegEx } from "./iconManager";
-import { processSvgContent } from "./svg";
+import { processSvgContent, renderSvg } from "./svg";
 
 export default class IconSwapperPlugin extends Plugin {
   settingsTab: IconSwapperSettingsTab;
@@ -95,7 +95,7 @@ class ExportModal extends Modal {
           setIcon(el, "download");
           el.appendText(" Download");
           el.addEventListener("click", () => {
-            const a = activeDocument.createElement("a");
+            const a = createEl("a");
             a.download = "icons.yml";
             a.href = `data:text/yaml;charset=utf-8,${encodeURIComponent(output)}`;
             a.click();
@@ -330,8 +330,7 @@ class AddCustomIconModal extends Modal {
     if (!this.previewEl) return;
     this.previewEl.empty();
     if (this.currentSvg && validSvgRegEx.test(this.currentSvg)) {
-      // eslint-disable-next-line no-unsanitized/property, @microsoft/sdl/no-inner-html
-      this.previewEl.innerHTML = this.currentSvg;
+      renderSvg(this.previewEl, this.currentSvg);
     } else if (this.currentSvg) {
       this.previewEl.setText("Invalid SVG");
       this.previewEl.addClass("icon-swapper-preview-error");
@@ -376,7 +375,7 @@ class UpdateCustomIconModal extends Modal {
       setting.controlEl.createDiv({ cls: "icon-swapper-icon" }, (icon) => {
         try {
           setIcon(icon, this.iconName);
-        } catch (_e) {
+        } catch {
           icon.setText("?");
         }
       });
@@ -460,8 +459,7 @@ class UpdateCustomIconModal extends Modal {
     if (!this.previewEl) return;
     this.previewEl.empty();
     if (this.currentSvg && validSvgRegEx.test(this.currentSvg)) {
-      // eslint-disable-next-line no-unsanitized/property, @microsoft/sdl/no-inner-html
-      this.previewEl.innerHTML = this.currentSvg;
+      renderSvg(this.previewEl, this.currentSvg);
     } else if (this.currentSvg) {
       this.previewEl.setText("Invalid SVG");
       this.previewEl.addClass("icon-swapper-preview-error");

@@ -31,16 +31,11 @@ export function scalePath(
   const o = Object.assign({}, node);
   const { scale: s } = scaleOptions || { scale: 1 };
   if (/(rect|circle|ellipse|polygon|polyline|line|path)/.test(o.name)) {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
     const path = toPath(o);
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
     const parseD = pathParse(path);
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
     const scaleD = scale(parseD, scaleOptions);
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
     const d = pathStringify(scaleD);
     o.attributes = Object.assign({}, o.attributes, {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       d,
     });
     for (const attr in o.attributes) {
@@ -73,7 +68,12 @@ export function scalePath(
 export function getDefaultIconSVG(name: string) {
   const container = createDiv("div");
   setIcon(container, name);
-  const inner = container.children[0].innerHTML;
+  const svg = container.children[0];
+  const serializer = new XMLSerializer();
+  let inner = "";
+  for (let i = 0; i < svg.childNodes.length; i++) {
+    inner += serializer.serializeToString(svg.childNodes[i]);
+  }
   container.remove();
   return inner;
 }
@@ -83,9 +83,25 @@ export function replaceIconSVG(name: string, content: string) {
   addIcon(name, content);
   // Replace any icons that already exist in the dom
   activeDocument.querySelectorAll(`svg.${name}`).forEach((el) => {
-    // eslint-disable-next-line no-unsanitized/property
-    el.innerHTML = content;
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(
+      `<svg xmlns="http://www.w3.org/2000/svg">${content}</svg>`,
+      "image/svg+xml"
+    );
+    const parsedSvg = doc.documentElement;
+    el.replaceChildren();
+    while (parsedSvg.firstChild) {
+      el.appendChild(parsedSvg.firstChild);
+    }
   });
+}
+
+// Safely render SVG string into an HTML element using DOMParser
+export function renderSvg(el: HTMLElement, svgString: string) {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(svgString, "image/svg+xml");
+  el.replaceChildren();
+  el.appendChild(doc.documentElement);
 }
 
 // 智能处理SVG内容，区分不同层级的颜色
