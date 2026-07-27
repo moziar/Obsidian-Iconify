@@ -266,24 +266,25 @@ class AddCustomIconModal extends Modal {
     });
 
     // SVG source — Paste
-    new Setting(contentEl).setName("Or paste SVG").then((setting) => {
-      new TextAreaComponent(contentEl)
-        .setPlaceholder("<svg>...</svg>")
-        .then((textarea) => {
-          textarea.inputEl.addClass("icon-swapper-svg-textarea");
-          textarea.onChange((value) => {
-            const trimmed = value.trim();
-            if (trimmed && validSvgRegEx.test(trimmed)) {
-              const processed = processSvgContent(trimmed);
-              this.currentSvg = processed;
-            } else {
-              this.currentSvg = trimmed;
-            }
-            this.updatePreview();
-          });
-        });
-      setting.controlEl.remove();
+    contentEl.createEl("div", {
+      text: "Or paste SVG",
+      cls: "icon-swapper-svg-label",
     });
+    new TextAreaComponent(contentEl)
+      .setPlaceholder("<svg>...</svg>")
+      .then((textarea) => {
+        textarea.inputEl.addClass("icon-swapper-svg-textarea");
+        textarea.onChange((value) => {
+          const trimmed = value.trim();
+          if (trimmed && validSvgRegEx.test(trimmed)) {
+            const processed = processSvgContent(trimmed);
+            this.currentSvg = processed;
+          } else {
+            this.currentSvg = trimmed;
+          }
+          this.updatePreview();
+        });
+      });
 
     // Preview
     contentEl.createEl("h3", { text: "Preview" });
@@ -408,24 +409,25 @@ class UpdateCustomIconModal extends Modal {
     });
 
     // SVG source — Paste
-    new Setting(contentEl).setName("Or paste SVG").then((setting) => {
-      new TextAreaComponent(contentEl)
-        .setPlaceholder("<svg>...</svg>")
-        .then((textarea) => {
-          textarea.inputEl.addClass("icon-swapper-svg-textarea");
-          textarea.onChange((value) => {
-            const trimmed = value.trim();
-            if (trimmed && validSvgRegEx.test(trimmed)) {
-              const processed = processSvgContent(trimmed);
-              this.currentSvg = processed;
-            } else {
-              this.currentSvg = trimmed;
-            }
-            this.updatePreview();
-          });
-        });
-      setting.controlEl.remove();
+    contentEl.createEl("div", {
+      text: "Or paste SVG",
+      cls: "icon-swapper-svg-label",
     });
+    new TextAreaComponent(contentEl)
+      .setPlaceholder("<svg>...</svg>")
+      .then((textarea) => {
+        textarea.inputEl.addClass("icon-swapper-svg-textarea");
+        textarea.onChange((value) => {
+          const trimmed = value.trim();
+          if (trimmed && validSvgRegEx.test(trimmed)) {
+            const processed = processSvgContent(trimmed);
+            this.currentSvg = processed;
+          } else {
+            this.currentSvg = trimmed;
+          }
+          this.updatePreview();
+        });
+      });
 
     // Preview
     contentEl.createEl("h3", { text: "Preview" });

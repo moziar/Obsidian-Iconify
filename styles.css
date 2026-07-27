@@ -110,7 +110,7 @@
 }
 
 .modal-icon-swapper {
-  max-height: 70vh;
+  max-height: 80vh;
   display: flex;
   flex-direction: column;
 }
@@ -120,6 +120,8 @@
   margin: 0;
   display: flex;
   flex-direction: column;
+  gap: 2px;
+  overflow-y: auto;
 }
 
 .modal-icon-swapper .modal-content textarea {
@@ -130,6 +132,7 @@
   white-space: pre;
   overflow-wrap: normal;
   overflow-x: scroll;
+  box-sizing: border-box;
 }
 
 .modal-icon-swapper textarea.iconify-config-textarea {
@@ -138,6 +141,42 @@
 
 .modal-icon-swapper .setting-item {
   align-items: center;
+  margin: 2px 0;
+  min-height: auto;
+  padding: 2px 0;
+}
+
+.modal-icon-swapper .setting-item:first-child {
+  margin-top: 0;
+}
+
+.modal-icon-swapper .setting-item .setting-item-info {
+  margin-right: 8px;
+}
+
+.modal-icon-swapper .setting-item .setting-item-name {
+  font-size: var(--font-ui-small);
+}
+
+.modal-icon-swapper h2,
+.modal-icon-swapper h3 {
+  margin: 4px 0 2px;
+  font-size: var(--font-ui-medium);
+}
+
+.icon-swapper-svg-label {
+  font-size: var(--font-ui-small);
+  color: var(--text-muted);
+  margin: 4px 0 2px;
+}
+
+/* Fix Save/Cancel buttons at the bottom of the modal */
+.modal-icon-swapper .modal-content > .setting-item:last-child {
+  position: sticky;
+  bottom: 0;
+  padding-top: 4px;
+  background: var(--background-primary);
+  z-index: 1;
 }
 
 .icon-swapper-import-error {
@@ -203,8 +242,8 @@
   align-items: center;
   justify-content: center;
   min-height: 80px;
-  padding: 16px;
-  margin: 8px 0;
+  padding: 8px;
+  margin: 4px 0;
   border: 1px dashed var(--background-modifier-border);
   border-radius: 6px;
   background: var(--background-secondary);
@@ -223,4 +262,7 @@
 .icon-swapper-svg-textarea {
   width: 100%;
   min-height: 80px;
+  max-height: 120px;
+  resize: vertical;
+  box-sizing: border-box;
 }
