@@ -8,7 +8,8 @@
     "dev": "rollup --config rollup.config.js -w",
     "build": "rollup --config rollup.config.js --environment BUILD:production",
     "lint": "npx eslint src/**/*.ts",
-    "lint:fix": "npx eslint src/**/*.ts --fix"
+    "lint:fix": "npx eslint src/**/*.ts --fix",
+    "version": "node version-bump.mjs && git add manifest.json versions.json"
   },
   "keywords": [],
   "author": "Moz",
