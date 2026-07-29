@@ -69,26 +69,6 @@ class ExportModal extends Modal {
     new Setting(contentEl)
       .setName("Export configuration")
       .then((setting) => {
-        setting.controlEl.createEl(
-          "button",
-          { cls: "icon-swapper-copy" },
-          (copyButton) => {
-            setIcon(copyButton, "copy");
-            copyButton.appendText(" Copy");
-            copyButton.addEventListener("click", () => {
-              void (async () => {
-                await navigator.clipboard.writeText(output);
-                copyButton.addClass("success");
-                window.setTimeout(() => {
-                  if (copyButton.parentNode) {
-                    copyButton.removeClass("success");
-                  }
-                }, 2000);
-              })();
-            });
-          }
-        );
-
         setting.controlEl.createEl("button", {
           cls: "icon-swapper-download",
         }, (el) => {

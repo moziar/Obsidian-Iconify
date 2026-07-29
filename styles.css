@@ -82,7 +82,6 @@
 .icon-swapper-import-label,
 .icon-swapper-export,
 .icon-swapper-import,
-.icon-swapper-copy,
 .icon-swapper-download {
   display: inline-flex;
   align-items: center;
@@ -100,13 +99,8 @@
 .icon-swapper-import-label:hover,
 .icon-swapper-export:hover,
 .icon-swapper-import:hover,
-.icon-swapper-copy:hover,
 .icon-swapper-download:hover {
   background-color: var(--interactive-hover);
-}
-
-.icon-swapper-copy.success {
-  color: var(--interactive-success);
 }
 
 .modal-icon-swapper {
