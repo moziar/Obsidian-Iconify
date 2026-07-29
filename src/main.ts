@@ -266,7 +266,7 @@ class AddCustomIconModal extends Modal {
     });
 
     // SVG source — Paste
-    contentEl.createEl("div", {
+    contentEl.createDiv({
       text: "Or paste SVG",
       cls: "icon-swapper-svg-label",
     });
@@ -409,7 +409,7 @@ class UpdateCustomIconModal extends Modal {
     });
 
     // SVG source — Paste
-    contentEl.createEl("div", {
+    contentEl.createDiv({
       text: "Or paste SVG",
       cls: "icon-swapper-svg-label",
     });
