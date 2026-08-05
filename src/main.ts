@@ -33,7 +33,8 @@ export default class IconSwapperPlugin extends Plugin {
     // 必须在 addSettingTab 之前初始化 iconManager，
     // 因为 addSettingTab 会立即调用 getSettingDefinitions() 做搜索索引
     const saveIcons = async (data: { icons: Icons; customIcons: Icons }) => {
-      const existing = (await this.loadData()) || {};
+      const existing =
+        ((await this.loadData()) as Record<string, unknown> | null) ?? {};
       await this.saveData(Object.assign({}, existing, data));
     };
     const loadIcons = async () => Object.assign({}, await this.loadData()) as { icons?: Icons; customIcons?: Icons } | Icons;
@@ -54,12 +55,19 @@ export default class IconSwapperPlugin extends Plugin {
   }
 
   async loadSettings() {
-    const stored = await this.loadData();
-    this.settings = Object.assign({}, DEFAULT_SETTINGS, stored?.settings || {});
+    const stored = (await this.loadData()) as
+      | { settings?: Partial<IconSwapperSettings> }
+      | null;
+    this.settings = Object.assign(
+      {},
+      DEFAULT_SETTINGS,
+      stored?.settings ?? {}
+    );
   }
 
   async saveSettings() {
-    const existing = (await this.loadData()) || {};
+    const existing =
+      ((await this.loadData()) as Record<string, unknown> | null) ?? {};
     await this.saveData(Object.assign({}, existing, { settings: this.settings }));
   }
 
