@@ -82,8 +82,8 @@ export function getDefaultIconSVG(name: string) {
 export function replaceIconSVG(name: string, content: string) {
   addIcon(name, content);
   // Replace any icons that already exist in the dom
+  const parser = new DOMParser();
   activeDocument.querySelectorAll(`svg.${name}`).forEach((el) => {
-    const parser = new DOMParser();
     const doc = parser.parseFromString(
       `<svg xmlns="http://www.w3.org/2000/svg">${content}</svg>`,
       "image/svg+xml"
