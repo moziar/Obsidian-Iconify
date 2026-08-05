@@ -16,18 +16,31 @@ import { DefaultIconsPage } from "./defaultIconsPage";
 import { IconManager, Icons, validSvgRegEx } from "./iconManager";
 import { processSvgContent, renderSvg } from "./svg";
 
+interface IconSwapperSettings {
+  autoReloadCommander: boolean;
+}
+
+const DEFAULT_SETTINGS: IconSwapperSettings = {
+  autoReloadCommander: false,
+};
+
 export default class IconSwapperPlugin extends Plugin {
   settingsTab: IconSwapperSettingsTab;
   iconManager: IconManager;
+  settings: IconSwapperSettings = DEFAULT_SETTINGS;
 
   async onload() {
     // 必须在 addSettingTab 之前初始化 iconManager，
     // 因为 addSettingTab 会立即调用 getSettingDefinitions() 做搜索索引
-    const saveIcons = async (data: { icons: Icons; customIcons: Icons }) =>
-      await this.saveData(data);
+    const saveIcons = async (data: { icons: Icons; customIcons: Icons }) => {
+      const existing = (await this.loadData()) || {};
+      await this.saveData(Object.assign({}, existing, data));
+    };
     const loadIcons = async () => Object.assign({}, await this.loadData()) as { icons?: Icons; customIcons?: Icons } | Icons;
     this.iconManager = new IconManager(saveIcons, loadIcons);
     await this.iconManager.loadIcons();
+
+    await this.loadSettings();
 
     this.settingsTab = new IconSwapperSettingsTab(this.app, this);
     this.addSettingTab(this.settingsTab);
@@ -38,6 +51,45 @@ export default class IconSwapperPlugin extends Plugin {
   onunload() {
     void this.iconManager.revertAll({ shouldSave: false });
     activeDocument.body.removeClass("icon-swapper-enabled");
+  }
+
+  async loadSettings() {
+    const stored = await this.loadData();
+    this.settings = Object.assign({}, DEFAULT_SETTINGS, stored?.settings || {});
+  }
+
+  async saveSettings() {
+    const existing = (await this.loadData()) || {};
+    await this.saveData(Object.assign({}, existing, { settings: this.settings }));
+  }
+
+  async reloadCommander() {
+    const commanderId = "cmdr";
+    try {
+      const plugins = (this.app as unknown as {
+        plugins: {
+          isEnabled: (id: string) => boolean;
+          disablePlugin: (id: string) => Promise<void>;
+          enablePlugin: (id: string) => Promise<void>;
+        };
+      }).plugins;
+      if (!plugins || !plugins.isEnabled(commanderId)) {
+        return;
+      }
+      await plugins.disablePlugin(commanderId);
+      // 让出事件循环，确保 Commander 完全 unload 后再重新 load
+      await new Promise((r) => setTimeout(r, 50));
+      await plugins.enablePlugin(commanderId);
+    } catch (e) {
+      console.error("[IconSwapper] Failed to reload Commander:", e);
+      new Notice(`Failed to reload Commander: ${e}`);
+    }
+  }
+
+  async maybeReloadCommander() {
+    if (this.settings.autoReloadCommander) {
+      await this.reloadCommander();
+    }
   }
 }
 
@@ -514,6 +566,13 @@ class IconSwapperSettingsTab extends PluginSettingTab {
     this.plugin = plugin;
   }
 
+  // 框架默认会用 this.plugin.saveData(this.plugin.settings) 覆盖整个 data.json，
+  // 这会丢失 icons / customIcons 数据。这里改用合并写入的 saveSettings()。
+  async setControlValue(key: string, value: unknown): Promise<void> {
+    Object.assign(this.plugin.settings, { [key]: value });
+    await this.plugin.saveSettings();
+  }
+
   getSettingDefinitions(): SettingDefinitionItem[] {
     return [
       // Import/Export/Revert
@@ -570,12 +629,15 @@ class IconSwapperSettingsTab extends PluginSettingTab {
                   await this.plugin.iconManager.addCustomIcon(name, svg);
                 if (success) {
                   new Notice(`Icon ${name} added.`);
-                  this.update();
+                  await this.plugin.maybeReloadCommander();
                 } else {
                   new Notice("Failed to add icon.");
                 }
               }
             );
+            modal.onClose = () => {
+              this.update();
+            };
             modal.open();
           },
         },
@@ -591,6 +653,7 @@ class IconSwapperSettingsTab extends PluginSettingTab {
                 void (async () => {
                   await this.plugin.iconManager.removeCustomIcon(name);
                   new Notice(`Icon ${name} deleted.`);
+                  await this.plugin.maybeReloadCommander();
                   this.update();
                 })();
               }
@@ -661,18 +724,30 @@ class IconSwapperSettingsTab extends PluginSettingTab {
                           );
                         if (success) {
                           new Notice(`Icon ${capturedName} updated.`);
-                          this.update();
                         } else {
                           new Notice("Failed to update icon.");
                         }
                       }
                     );
+                    modal.onClose = () => {
+                      this.update();
+                    };
                     modal.open();
                   });
               });
             },
           })
         ),
+      },
+
+      // Auto-reload Commander
+      {
+        name: "Auto-reload Commander",
+        desc: "After adding or removing an icon, automatically restart the Commander plugin so its icon picker picks up the change. Commander caches the icon list when it loads, so newly added icons won't appear in its picker until Commander is restarted. Enabling this automates that restart.",
+        control: {
+          type: "toggle",
+          key: "autoReloadCommander",
+        },
       },
 
       // Default Icon 二级页面

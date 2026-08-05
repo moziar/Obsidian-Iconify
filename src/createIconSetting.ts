@@ -5,9 +5,10 @@ interface Options {
   containerEl: HTMLElement;
   name: string;
   iconManager: IconManager;
+  onIconChange?: () => Promise<void> | void;
 }
 
-export function createIconSetting({ containerEl, name, iconManager }: Options) {
+export function createIconSetting({ containerEl, name, iconManager, onIconChange }: Options) {
   let textComponent: TextAreaComponent;
   new Setting(containerEl)
     // SVG input textarea
@@ -25,6 +26,7 @@ export function createIconSetting({ containerEl, name, iconManager }: Options) {
         } else {
           await iconManager.revertIcon({ name });
         }
+        await onIconChange?.();
       });
     })
     // Reset icon button
@@ -34,6 +36,7 @@ export function createIconSetting({ containerEl, name, iconManager }: Options) {
         .onClick(async () => {
           textComponent.setValue("");
           await iconManager.revertIcon({ name });
+          await onIconChange?.();
         });
     })
     // Icon display

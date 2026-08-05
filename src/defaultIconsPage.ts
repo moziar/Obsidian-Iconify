@@ -21,6 +21,7 @@ export class DefaultIconsPage extends SettingPage {
           containerEl: this.containerEl,
           name,
           iconManager: this.plugin.iconManager,
+          onIconChange: () => this.plugin.maybeReloadCommander(),
         });
       });
     } catch (error) {
