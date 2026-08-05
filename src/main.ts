@@ -50,8 +50,15 @@ export default class IconSwapperPlugin extends Plugin {
   }
 
   onunload() {
-    void this.iconManager.revertAll({ shouldSave: false });
-    void this.iconManager.removeAllCustomIcons({ shouldSave: false });
+    const safe = async (p: Promise<unknown>, label: string) => {
+      try {
+        await p;
+      } catch (e) {
+        console.error(`[IconSwapper] ${label} failed:`, e);
+      }
+    };
+    void safe(this.iconManager.revertAll({ shouldSave: false }), "revertAll");
+    void safe(this.iconManager.removeAllCustomIcons({ shouldSave: false }), "removeAllCustomIcons");
     activeDocument.body.removeClass("icon-swapper-enabled");
   }
 
