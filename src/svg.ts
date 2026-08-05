@@ -105,87 +105,30 @@ export function renderSvg(el: HTMLElement, svgString: string) {
 }
 
 // 智能处理SVG内容，区分不同层级的颜色
+// 使用 DOMParser 进行结构化处理，避免正则字符串操作的 edge case
 export function processSvgContent(svgContent: string): string {
-  // 移除SVG中的fill属性，但保留层次感
-  let processedSvg = svgContent;
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(svgContent, "image/svg+xml");
 
-  // 确保viewBox存在
-  processedSvg = processedSvg.replace(/<svg[^>]*>/, function (match) {
-    // 确保viewBox存在
-    if (match.indexOf("viewBox") === -1) {
-      // 如果没有viewBox，尝试从width和height创建一个
-      const widthMatch = match.match(/width="([^"]*)"/);
-      const heightMatch = match.match(/height="([^"]*)"/);
-      if (widthMatch && heightMatch) {
-        const width = widthMatch[1];
-        const height = heightMatch[1];
-        match = match.replace(/<svg/, `<svg viewBox="0 0 ${width} ${height}"`);
-      }
-    }
-    return match;
-  });
-
-  // 保存 defs 部分，以便后续恢复
-  let defsContent = "";
-  const defsRegex = /<defs[^>]*>([\s\S]*?)<\/defs>/g;
-  let defsMatch = defsRegex.exec(processedSvg);
-  if (defsMatch) {
-    defsContent = defsMatch[0];
-    // 临时移除 defs 部分，以避免它被后续处理
-    processedSvg = processedSvg.replace(defsMatch[0], "<!-- DEFS_PLACEHOLDER -->");
+  // 解析失败时原样返回，避免破坏输入
+  if (doc.querySelector("parsererror") || !doc.documentElement) {
+    return svgContent;
   }
 
-  // 预处理：移除所有元素中的fill和fill-rule属性
-  // 这样可以确保无论SVG中是否已经有fill属性，我们都能正确应用我们的颜色设置
-  processedSvg = processedSvg.replace(
-    /<(path|rect|circle|ellipse|line|polyline|polygon|g)[^>]*>/g,
-    function (match) {
-      // 移除所有形式的fill属性
-      match = match.replace(/\s+fill\s*=\s*["'][^"']*["']/g, "");
-      match = match.replace(/\s+fill\s*=\s*[^\s>/]*/g, "");
-      // 移除所有形式的fill-rule属性
-      match = match.replace(/\s+fill-rule\s*=\s*["'][^"']*["']/g, "");
-      match = match.replace(/\s+fill-rule\s*=\s*[^\s>/]*/g, "");
-      return match;
+  const svg = doc.documentElement;
+
+  // 确保viewBox存在：没有则尝试从width和height创建
+  if (!svg.getAttribute("viewBox")) {
+    const width = svg.getAttribute("width");
+    const height = svg.getAttribute("height");
+    if (width && height) {
+      svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
     }
-  );
-
-  // 解析SVG内容，处理路径元素
-  const pathRegex = /<path[^>]*>/g;
-  let pathMatches: { match: string; index: number }[] = [];
-
-  // 首先收集所有路径元素
-  let pathMatch;
-  while ((pathMatch = pathRegex.exec(processedSvg)) !== null) {
-    pathMatches.push({
-      match: pathMatch[0],
-      index: pathMatch.index,
-    });
   }
 
-  // 从后向前替换，以避免索引变化问题
-  for (let i = pathMatches.length - 1; i >= 0; i--) {
-    let match = pathMatches[i].match;
-    let index = pathMatches[i].index;
-
-    // 为第一层路径保留currentColor，为第二层路径使用透明色
-    if (i === 0) {
-      // 第一个路径使用currentColor
-      match = match.replace(/<path/, '<path fill="currentColor"');
-    } else {
-      // 其他路径使用none
-      match = match.replace(/<path/, '<path fill="var(--background-primary)"');
-    }
-
-    // 替换原始字符串中的路径
-    processedSvg =
-      processedSvg.substring(0, index) +
-      match +
-      processedSvg.substring(index + pathMatches[i].match.length);
-  }
-
-  // 同样处理其他可能的SVG元素
-  const elementTypes = [
+  // 需要处理 fill 的形状/分组元素类型
+  const SHAPE_TAGS = [
+    "path",
     "rect",
     "circle",
     "ellipse",
@@ -194,54 +137,22 @@ export function processSvgContent(svgContent: string): string {
     "polygon",
     "g",
   ];
-  elementTypes.forEach((elementType) => {
-    const regex = new RegExp(`<${elementType}[^>]*>`, "g");
-    let elementMatches: { match: string; index: number }[] = [];
-    let elementMatch;
 
-    // 收集所有元素
-    while ((elementMatch = regex.exec(processedSvg)) !== null) {
-      elementMatches.push({
-        match: elementMatch[0],
-        index: elementMatch.index,
-      });
-    }
-
-    // 从后向前替换
-    for (let i = elementMatches.length - 1; i >= 0; i--) {
-      let match = elementMatches[i].match;
-      let index = elementMatches[i].index;
-
-      // 为第一个元素使用currentColor，第二个使用背景色
-      if (i === 0) {
-        match = match.replace(
-          new RegExp(`<${elementType}`),
-          `<${elementType} fill="currentColor">`
-        );
-      } else {
-        match = match.replace(
-          new RegExp(`<${elementType}`),
-          `<${elementType} fill="var(--background-primary)">`
-        );
-      }
-
-      // 替换原始字符串中的元素
-      processedSvg =
-        processedSvg.substring(0, index) +
-        match +
-        processedSvg.substring(index + elementMatches[i].match.length);
-    }
+  // 对每种类型：移除原有 fill / fill-rule，第一个元素使用 currentColor，
+  // 其余元素使用 var(--background-primary)；跳过 <defs> 内部的元素以保留其原始定义
+  SHAPE_TAGS.forEach((tag) => {
+    const elements = Array.from(svg.getElementsByTagName(tag));
+    const visibleElements = elements.filter((el) => !el.closest("defs"));
+    visibleElements.forEach((el, i) => {
+      el.removeAttribute("fill");
+      el.removeAttribute("fill-rule");
+      el.setAttribute(
+        "fill",
+        i === 0 ? "currentColor" : "var(--background-primary)"
+      );
+    });
   });
 
-  // 规范化空格
-  processedSvg = processedSvg.trim();
-  processedSvg = processedSvg.replace(/\s+/g, " ");
-  processedSvg = processedSvg.replace(/\s*(<[^>]+>)\s*/g, "$1");
-
-  // 恢复 defs 部分
-  if (defsContent) {
-    processedSvg = processedSvg.replace("<!-- DEFS_PLACEHOLDER -->", defsContent);
-  }
-
-  return processedSvg;
+  const serializer = new XMLSerializer();
+  return serializer.serializeToString(svg);
 }
