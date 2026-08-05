@@ -66,7 +66,7 @@ export function scalePath(
 
 // Retrieve the default SVG markup for a given icon name
 export function getDefaultIconSVG(name: string) {
-  const container = createDiv("div");
+  const container = createDiv();
   setIcon(container, name);
   const svg = container.children[0];
   const serializer = new XMLSerializer();
