@@ -1,5 +1,5 @@
 import { INode, parse, stringify } from "svgson";
-import { addIcon } from "obsidian";
+import { addIcon, removeIcon } from "obsidian";
 import {
   getDefaultIconSVG,
   getMaxViewBox,
@@ -127,6 +127,7 @@ export class IconManager {
   async removeCustomIcon(name: string) {
     if (this.customIcons[name]) {
       delete this.customIcons[name];
+      removeIcon(name);
       await this.saveData();
       return true;
     }
@@ -135,6 +136,9 @@ export class IconManager {
 
   // 删除所有自定义图标
   async removeAllCustomIcons() {
+    for (const name in this.customIcons) {
+      removeIcon(name);
+    }
     this.customIcons = {};
     await this.saveData();
   }
