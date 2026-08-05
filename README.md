@@ -12,9 +12,9 @@ Add custom icon to Obsidian and allow swapping out default icons
 
 This plugin introduces support for custom icons through unique `iconId` identifiers. This enables seamless integration with other plugins like [Callout Manager](https://github.com/eth-p/obsidian-callout-manager), [Callout Studio](https://github.com/Niv20/obsidian-Plugin-Callout-Studio), [Commander](https://github.com/phibr0/obsidian-commander) and [Better Properties](https://github.com/unxok/obsidian-better-properties).
 
+### Auto-reload Commander
 
-
-**Important:** Always restart Obsidian after adding new icons to ensure they load properly.
+This plugin provides an **Auto-reload Commander** setting. When enabled, Iconify will disable and then re-enable the [Commander](https://github.com/phibr0/obsidian-commander) plugin automatically after icons are added or removed, so that Commander's icon picker picks up the change without requiring a manual Obsidian restart. This only affects Commander; no other plugins are touched.
 
 
 
