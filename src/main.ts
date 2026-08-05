@@ -78,7 +78,7 @@ export default class IconSwapperPlugin extends Plugin {
       }
       await plugins.disablePlugin(commanderId);
       // 让出事件循环，确保 Commander 完全 unload 后再重新 load
-      await new Promise((r) => setTimeout(r, 50));
+      await new Promise((r) => window.setTimeout(r, 50));
       await plugins.enablePlugin(commanderId);
     } catch (e) {
       console.error("[IconSwapper] Failed to reload Commander:", e);
