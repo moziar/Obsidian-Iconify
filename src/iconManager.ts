@@ -135,12 +135,15 @@ export class IconManager {
   }
 
   // 删除所有自定义图标
-  async removeAllCustomIcons() {
+  async removeAllCustomIcons(opts: { shouldSave?: boolean } = {}) {
+    const { shouldSave = true } = opts;
     for (const name in this.customIcons) {
       removeIcon(name);
     }
     this.customIcons = {};
-    await this.saveData();
+    if (shouldSave) {
+      await this.saveData();
+    }
   }
 
   // 批量导入自定义图标

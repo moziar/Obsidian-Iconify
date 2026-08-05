@@ -51,6 +51,7 @@ export default class IconSwapperPlugin extends Plugin {
 
   onunload() {
     void this.iconManager.revertAll({ shouldSave: false });
+    void this.iconManager.removeAllCustomIcons({ shouldSave: false });
     activeDocument.body.removeClass("icon-swapper-enabled");
   }
 
