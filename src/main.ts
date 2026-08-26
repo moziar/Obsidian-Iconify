@@ -20,6 +20,13 @@ interface IconSwapperSettings {
   autoReloadCommander: boolean;
 }
 
+// data.json 的完整结构（图标替换 + 自定义图标 + 插件设置）
+type PluginData = {
+  icons?: Icons;
+  customIcons?: Icons;
+  settings?: Partial<IconSwapperSettings>;
+} | null;
+
 const DEFAULT_SETTINGS: IconSwapperSettings = {
   autoReloadCommander: false,
 };
@@ -32,16 +39,21 @@ export default class IconSwapperPlugin extends Plugin {
   async onload() {
     // 必须在 addSettingTab 之前初始化 iconManager，
     // 因为 addSettingTab 会立即调用 getSettingDefinitions() 做搜索索引
+    // data.json 只读一次，图标数据和设置共用，避免重复磁盘读
+    const stored = (await this.loadData()) as PluginData;
     const saveIcons = async (data: { icons: Icons; customIcons: Icons }) => {
       const existing =
         ((await this.loadData()) as Record<string, unknown> | null) ?? {};
       await this.saveData(Object.assign({}, existing, data));
     };
-    const loadIcons = async () => Object.assign({}, await this.loadData()) as { icons?: Icons; customIcons?: Icons } | Icons;
+    const loadIcons = async () =>
+      Object.assign({}, stored) as
+        | { icons?: Icons; customIcons?: Icons }
+        | Icons;
     this.iconManager = new IconManager(saveIcons, loadIcons);
     await this.iconManager.loadIcons();
 
-    await this.loadSettings();
+    await this.loadSettings(stored);
 
     this.settingsTab = new IconSwapperSettingsTab(this.app, this);
     this.addSettingTab(this.settingsTab);
@@ -62,14 +74,12 @@ export default class IconSwapperPlugin extends Plugin {
     activeDocument.body.removeClass("icon-swapper-enabled");
   }
 
-  async loadSettings() {
-    const stored = (await this.loadData()) as
-      | { settings?: Partial<IconSwapperSettings> }
-      | null;
+  async loadSettings(stored?: PluginData) {
+    const data = stored ?? ((await this.loadData()) as PluginData);
     this.settings = Object.assign(
       {},
       DEFAULT_SETTINGS,
-      stored?.settings ?? {}
+      data?.settings ?? {}
     );
   }
 
