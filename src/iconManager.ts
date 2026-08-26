@@ -1,4 +1,3 @@
-import { INode, parse, stringify } from "svgson";
 import { addIcon, removeIcon } from "obsidian";
 import {
   getDefaultIconSVG,
@@ -12,20 +11,22 @@ export const validSvgRegEx = /^<svg[^>]+?>[\s\S]*?<\/svg>?/i;
 // Convert a user-supplied SVG to the correct format and size for addIcon
 export async function svgToIcon(value: string) {
   try {
+    // svgson 懒加载：只在处理用户提供的 SVG 时才求值，避免拖慢插件启动
+    const { parse, stringify } = await import("svgson");
     const parsed = await parse(value);
     const maxViewBox = getMaxViewBox(parsed);
     const children: string[] = [];
     if (maxViewBox) {
-      parsed.children.forEach((path: INode) => {
+      for (const path of parsed.children) {
         children.push(
           stringify(
             // Scale the SVG to 100x100 only if the viewbox isn't already at 100
             maxViewBox === 100
               ? path
-              : scalePath(path, { scale: 100 / maxViewBox, round: 3 })
+              : await scalePath(path, { scale: 100 / maxViewBox, round: 3 })
           )
         );
-      });
+      }
     }
     return children.join("");
   } catch (e) {
@@ -55,7 +56,8 @@ export class IconManager {
     this.load = load;
   }
 
-  async loadIcons() {
+  async loadIcons(opts?: { scanDom?: boolean }) {
+    const { scanDom = true } = opts ?? {};
     const data = await this.load();
     const hasIconsKey = data && typeof (data as Record<string, unknown>).icons === "object";
     const icons: Icons = hasIconsKey ? (data as { icons: Icons }).icons : (data as Icons) || {};
@@ -70,6 +72,7 @@ export class IconManager {
         svg: icons[icon],
         shouldSave: false,
         isTrustedSource: true,
+        scanDom,
       });
     }
 
@@ -85,14 +88,15 @@ export class IconManager {
     svg: string;
     shouldSave?: boolean;
     isTrustedSource?: boolean;
+    scanDom?: boolean;
   }) {
-    const { name, svg, shouldSave = true, isTrustedSource = false } = opts;
+    const { name, svg, shouldSave = true, isTrustedSource = false, scanDom = true } = opts;
     // Store a copy of the default icon if we haven't already
     if (!this.defaults[name]) {
       this.defaults[name] = getDefaultIconSVG(name);
     }
     const iconSVG = isTrustedSource ? svg : (await svgToIcon(svg)) || "";
-    replaceIconSVG(name, iconSVG);
+    replaceIconSVG(name, iconSVG, { scanDom });
     this.icons[name] = iconSVG;
     if (shouldSave) {
       await this.saveData();

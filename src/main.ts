@@ -11,7 +11,6 @@ import {
   TextComponent,
   setIcon,
 } from "obsidian";
-import { parse, stringify } from "yaml";
 import { DefaultIconsPage } from "./defaultIconsPage";
 import { IconManager, Icons, validSvgRegEx } from "./iconManager";
 import { processSvgContent, renderSvg } from "./svg";
@@ -51,7 +50,11 @@ export default class IconSwapperPlugin extends Plugin {
         | { icons?: Icons; customIcons?: Icons }
         | Icons;
     this.iconManager = new IconManager(saveIcons, loadIcons);
-    await this.iconManager.loadIcons();
+    // 布局未渲染完时跳过 DOM 扫描（图标还不在 DOM 里，布局渲染时会
+    // 直接从注册表读取已替换的内容），运行中启用插件则照常扫描替换
+    await this.iconManager.loadIcons({
+      scanDom: this.app.workspace.layoutReady,
+    });
 
     await this.loadSettings(stored);
 
@@ -130,8 +133,14 @@ class ExportModal extends Modal {
   }
 
   onOpen() {
-    let { contentEl, modalEl } = this;
-    modalEl.addClass("modal-icon-swapper");
+    this.modalEl.addClass("modal-icon-swapper");
+    // yaml 库懒加载：只在打开导出弹窗时才求值，减少插件启动开销
+    void this.renderContent();
+  }
+
+  private async renderContent() {
+    const { stringify } = await import("yaml");
+    const { contentEl } = this;
 
     const wrapIcons = (icons: { [k: string]: string }) =>
       Object.keys(icons).reduce<{ [k: string]: string }>((acc, name) => {
@@ -229,6 +238,8 @@ class ImportModal extends Modal {
     const importAndClose = async (str: string) => {
       if (str) {
         try {
+          // yaml 库懒加载：只在导入配置时才求值
+          const { parse } = await import("yaml");
           const parsed = parse(str) as Record<string, unknown>;
           const hasIconsKey = parsed && typeof parsed.icons === "object";
           const icons = (hasIconsKey ? parsed.icons : parsed) as Icons;

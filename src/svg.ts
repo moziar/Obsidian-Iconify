@@ -1,10 +1,4 @@
-import { INode } from "svgson";
-import toPath from "element-to-path";
-import {
-  parse as pathParse,
-  stringify as pathStringify,
-  scale,
-} from "svg-path-tools";
+import type { INode } from "svgson";
 import { addIcon, setIcon } from "obsidian";
 
 // Parse the viewbox attribute for the maximum value
@@ -24,75 +18,95 @@ export function getMaxViewBox(parsedSVG: INode) {
 }
 
 // Scale a parsed SVG child element; adapted from https://github.com/elrumordelaluz/svg-path-tools
-export function scalePath(
+// 路径工具链（element-to-path / svg-path-tools）懒加载：
+// 只有真正缩放用户提供的 SVG 时才求值，避免拖慢插件启动
+export async function scalePath(
   node: INode,
   scaleOptions: { scale: number; round: number }
 ) {
-  const o = Object.assign({}, node);
-  const { scale: s } = scaleOptions || { scale: 1 };
-  if (/(rect|circle|ellipse|polygon|polyline|line|path)/.test(o.name)) {
-    const path = toPath(o);
-    const parseD = pathParse(path);
-    const scaleD = scale(parseD, scaleOptions);
-    const d = pathStringify(scaleD);
-    o.attributes = Object.assign({}, o.attributes, {
-      d,
-    });
-    for (const attr in o.attributes) {
-      if (attr === "stroke-width" || attr === "strokeWidth") {
-        o.attributes[attr] = String(+o.attributes[attr] * s);
-      }
-      if (!/fill|stroke|opacity|d/.test(attr)) {
-        delete o.attributes[attr];
+  const [toPathMod, pathTools] = await Promise.all([
+    import("element-to-path"),
+    import("svg-path-tools"),
+  ]);
+  const toPath = toPathMod.default;
+  const { parse: pathParse, stringify: pathStringify, scale } = pathTools;
+  const s = scaleOptions?.scale ?? 1;
+
+  const walk = (n: INode): INode => {
+    const o = Object.assign({}, n);
+    if (/(rect|circle|ellipse|polygon|polyline|line|path)/.test(o.name)) {
+      const path = toPath(o);
+      const parseD = pathParse(path);
+      const scaleD = scale(parseD, scaleOptions);
+      const d = pathStringify(scaleD);
+      o.attributes = Object.assign({}, o.attributes, {
+        d,
+      });
+      for (const attr in o.attributes) {
+        if (attr === "stroke-width" || attr === "strokeWidth") {
+          o.attributes[attr] = String(+o.attributes[attr] * s);
+        }
+        if (!/fill|stroke|opacity|d/.test(attr)) {
+          delete o.attributes[attr];
+        }
+        // 不在这里设置 fill 属性，让 processSvgContent 函数处理
+        else if (/stroke/.test(attr)) {
+          o.attributes[attr] = "currentColor";
+        }
       }
       // 不在这里设置 fill 属性，让 processSvgContent 函数处理
-      else if (/stroke/.test(attr)) {
-        o.attributes[attr] = "currentColor";
-      }
+      if (
+        !o.attributes.stroke &&
+        (o.attributes.strokeWidth || o.attributes["stroke-width"])
+      )
+        o.attributes.stroke = "currentColor";
+      o.name = "path";
+    } else if (o.children && Array.isArray(o.children)) {
+      o.children = o.children.map(walk);
     }
-    // 不在这里设置 fill 属性，让 processSvgContent 函数处理
-    if (
-      !o.attributes.stroke &&
-      (o.attributes.strokeWidth || o.attributes["stroke-width"])
-    )
-      o.attributes.stroke = "currentColor";
-    o.name = "path";
-  } else if (o.children && Array.isArray(o.children)) {
-    const _scale = (c: INode) => scalePath(c, scaleOptions);
-    o.children = o.children.map(_scale);
-  }
-  return o;
+    return o;
+  };
+
+  return walk(node);
 }
+
+// 复用 serializer/parser 实例，避免每次调用重复创建
+const xmlSerializer = new XMLSerializer();
+const domParser = new DOMParser();
 
 // Retrieve the default SVG markup for a given icon name
 export function getDefaultIconSVG(name: string) {
   const container = createDiv();
   setIcon(container, name);
   const svg = container.children[0];
-  const serializer = new XMLSerializer();
   let inner = "";
   for (let i = 0; i < svg.childNodes.length; i++) {
-    inner += serializer.serializeToString(svg.childNodes[i]);
+    inner += xmlSerializer.serializeToString(svg.childNodes[i]);
   }
   container.remove();
   return inner;
 }
 
 // Override a default icon's SVG markup
-export function replaceIconSVG(name: string, content: string) {
+export function replaceIconSVG(
+  name: string,
+  content: string,
+  opts?: { scanDom?: boolean }
+) {
   addIcon(name, content);
-  // Replace any icons that already exist in the dom
-  const parser = new DOMParser();
-  activeDocument.querySelectorAll(`svg.${name}`).forEach((el) => {
-    const doc = parser.parseFromString(
-      `<svg xmlns="http://www.w3.org/2000/svg">${content}</svg>`,
-      "image/svg+xml"
-    );
-    const parsedSvg = doc.documentElement;
-    el.replaceChildren();
-    while (parsedSvg.firstChild) {
-      el.appendChild(parsedSvg.firstChild);
-    }
+  // 允许跳过 DOM 扫描：插件启动时布局尚未渲染，图标还不在 DOM 里，
+  // 布局渲染时会直接从注册表读取已替换的内容
+  if (opts?.scanDom === false) return;
+  const targets = activeDocument.querySelectorAll(`svg.${name}`);
+  if (targets.length === 0) return;
+  // 解析一次，克隆给每个目标元素，避免重复 parse
+  const doc = domParser.parseFromString(
+    `<svg xmlns="http://www.w3.org/2000/svg">${content}</svg>`,
+    "image/svg+xml"
+  );
+  const children = Array.from(doc.documentElement.childNodes);
+  targets.forEach((el) => {
+    el.replaceChildren(...children.map((c) => c.cloneNode(true)));
   });
 }
 
@@ -107,8 +121,7 @@ export function renderSvg(el: HTMLElement, svgString: string) {
 // 智能处理SVG内容，区分不同层级的颜色
 // 使用 DOMParser 进行结构化处理，避免正则字符串操作的 edge case
 export function processSvgContent(svgContent: string): string {
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(svgContent, "image/svg+xml");
+  const doc = domParser.parseFromString(svgContent, "image/svg+xml");
 
   // 解析失败时原样返回，避免破坏输入
   if (doc.querySelector("parsererror") || !doc.documentElement) {
@@ -153,6 +166,5 @@ export function processSvgContent(svgContent: string): string {
     });
   });
 
-  const serializer = new XMLSerializer();
-  return serializer.serializeToString(svg);
+  return xmlSerializer.serializeToString(svg);
 }
