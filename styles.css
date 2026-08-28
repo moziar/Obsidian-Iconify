@@ -111,7 +111,10 @@
 
 .modal-icon-swapper .modal-content {
   flex-grow: 1;
-  margin: 0;
+  /* 留出空间让原生 focus 高亮（绘制在控件外侧）不被滚动容器裁剪；
+     负 margin 抵消 padding，保持内容宽度与原来一致 */
+  margin: -2px -4px 0;
+  padding: 2px 4px 0;
   display: flex;
   flex-direction: column;
   gap: 2px;
