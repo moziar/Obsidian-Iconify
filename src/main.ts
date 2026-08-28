@@ -44,7 +44,11 @@ export default class IconSwapperPlugin extends Plugin {
     // 因为 addSettingTab 会立即调用 getSettingDefinitions() 做搜索索引
     // data.json 只读一次，图标数据和设置共用，避免重复磁盘读
     const stored = (await this.loadData()) as PluginData;
-    const saveIcons = async (data: { icons: Icons; customIcons: Icons }) => {
+    const saveIcons = async (data: {
+      icons: Icons;
+      customIcons: Icons;
+      customIconOrder: string[];
+    }) => {
       const existing =
         ((await this.loadData()) as Record<string, unknown> | null) ?? {};
       await this.saveData(Object.assign({}, existing, data));
@@ -172,6 +176,7 @@ class ExportModal extends Modal {
     const output = stringify({
       icons: wrapIcons(this.plugin.iconManager.icons),
       customIcons: wrapIcons(this.plugin.iconManager.customIcons),
+      customIconOrder: this.plugin.iconManager.customIconOrder,
     });
 
     new Setting(contentEl)
@@ -265,11 +270,14 @@ class ImportModal extends Modal {
           const hasIconsKey = parsed && typeof parsed.icons === "object";
           const icons = (hasIconsKey ? parsed.icons : parsed) as Icons;
           const customIcons = (parsed?.customIcons || {}) as Icons;
+          const customIconOrder = Array.isArray(parsed?.customIconOrder)
+            ? (parsed.customIconOrder as string[])
+            : undefined;
 
           await this.plugin.iconManager.revertAll({ shouldSave: false });
           await this.plugin.iconManager.removeAllCustomIcons();
           await this.plugin.iconManager.setAll(icons);
-          await this.plugin.iconManager.setAllCustomIcons(customIcons);
+          await this.plugin.iconManager.setAllCustomIcons(customIcons, customIconOrder);
           this.plugin.settingsTab.update();
           this.close();
         } catch (e) {
@@ -700,8 +708,7 @@ class IconSwapperSettingsTab extends PluginSettingTab {
           },
         },
         onDelete: (idx) => {
-          const names = Object.keys(this.plugin.iconManager.customIcons);
-          const name = names[idx];
+          const name = this.plugin.iconManager.customIconOrder[idx];
           if (name) {
             new ConfirmModal(
               this.app,
@@ -722,21 +729,11 @@ class IconSwapperSettingsTab extends PluginSettingTab {
         },
         onReorder: (oldIndex, newIndex) => {
           void (async () => {
-            const customIcons = this.plugin.iconManager.customIcons;
-            const names = Object.keys(customIcons);
-            const [moved] = names.splice(oldIndex, 1);
-            names.splice(newIndex, 0, moved);
-            // 重建对象以保持新顺序
-            const reordered: Icons = {};
-            for (const name of names) {
-              reordered[name] = customIcons[name];
-            }
-            this.plugin.iconManager.customIcons = reordered;
-            await this.plugin.iconManager.saveData();
+            await this.plugin.iconManager.reorderCustomIcons(oldIndex, newIndex);
             this.update();
           })();
         },
-        items: Object.keys(this.plugin.iconManager.customIcons).map(
+        items: this.plugin.iconManager.customIconOrder.map(
           (iconName) => ({
             name: iconName,
             searchable: false,

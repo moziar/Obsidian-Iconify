@@ -38,13 +38,22 @@ export interface Icons {
   [k: string]: string;
 }
 
-type SaveFn = (icons: { icons: Icons; customIcons: Icons }) => Promise<void>;
-type LoadFn = () => Promise<{ icons?: Icons; customIcons?: Icons } | Icons>;
+type SaveFn = (icons: {
+  icons: Icons;
+  customIcons: Icons;
+  customIconOrder: string[];
+}) => Promise<void>;
+type LoadFn = () => Promise<
+  { icons?: Icons; customIcons?: Icons; customIconOrder?: string[] } | Icons
+>;
 
 export class IconManager {
   defaults: Icons;
   icons: Icons;
   customIcons: Icons;
+  // JS 对象的整数键名会强制按数值升序置顶（如纯数字图标名），
+  // 无法保持插入顺序，因此用独立的数组维护自定义图标的显示顺序
+  customIconOrder: string[];
   save: SaveFn;
   load: LoadFn;
 
@@ -52,6 +61,7 @@ export class IconManager {
     this.defaults = {};
     this.icons = {};
     this.customIcons = {};
+    this.customIconOrder = [];
     this.save = save;
     this.load = load;
   }
@@ -64,6 +74,9 @@ export class IconManager {
     const customIcons: Icons = hasIconsKey && (data as Record<string, unknown>).customIcons
       ? (data as { customIcons: Icons }).customIcons
       : {};
+    const storedOrder: string[] | undefined = hasIconsKey
+      ? (data as { customIconOrder?: string[] }).customIconOrder
+      : undefined;
 
     // 加载默认图标替换
     for (const icon in icons) {
@@ -80,6 +93,17 @@ export class IconManager {
     this.customIcons = customIcons;
     for (const icon in customIcons) {
       addIcon(icon, customIcons[icon]);
+    }
+    // 迁移：旧数据没有 order 数组时按当前 keys 顺序初始化；
+    // 同时清理 order 中已不存在的图标名
+    const keys = Object.keys(customIcons);
+    this.customIconOrder = storedOrder
+      ? storedOrder.filter((name) => name in customIcons)
+      : keys;
+    for (const name of keys) {
+      if (!this.customIconOrder.includes(name)) {
+        this.customIconOrder.push(name);
+      }
     }
   }
 
@@ -108,6 +132,7 @@ export class IconManager {
     await this.save({
       icons: this.icons,
       customIcons: this.customIcons,
+      customIconOrder: this.customIconOrder,
     });
   }
 
@@ -119,6 +144,9 @@ export class IconManager {
       const iconSVG = (await svgToIcon(svg)) || "";
       addIcon(name, iconSVG);
       this.customIcons[name] = iconSVG;
+      if (!this.customIconOrder.includes(name)) {
+        this.customIconOrder.push(name);
+      }
       await this.saveData();
       return true;
     } catch (e) {
@@ -131,6 +159,7 @@ export class IconManager {
   async removeCustomIcon(name: string) {
     if (this.customIcons[name]) {
       delete this.customIcons[name];
+      this.customIconOrder = this.customIconOrder.filter((n) => n !== name);
       removeIcon(name);
       await this.saveData();
       return true;
@@ -145,13 +174,14 @@ export class IconManager {
       removeIcon(name);
     }
     this.customIcons = {};
+    this.customIconOrder = [];
     if (shouldSave) {
       await this.saveData();
     }
   }
 
   // 批量导入自定义图标
-  async setAllCustomIcons(icons: Icons) {
+  async setAllCustomIcons(icons: Icons, order?: string[]) {
     for (const name in icons) {
       const svg = (icons[name] || "").trim();
       if (!svg || !validSvgRegEx.test(svg)) continue;
@@ -159,6 +189,24 @@ export class IconManager {
       addIcon(name, iconSVG);
       this.customIcons[name] = iconSVG;
     }
+    // 导入的 order 优先（过滤掉不存在的名字），否则按导入顺序
+    const names = Object.keys(this.customIcons);
+    this.customIconOrder = order
+      ? order.filter((name) => name in this.customIcons)
+      : names;
+    for (const name of names) {
+      if (!this.customIconOrder.includes(name)) {
+        this.customIconOrder.push(name);
+      }
+    }
+    await this.saveData();
+  }
+
+  // 重排自定义图标顺序
+  async reorderCustomIcons(oldIndex: number, newIndex: number) {
+    const names = this.customIconOrder;
+    const [moved] = names.splice(oldIndex, 1);
+    names.splice(newIndex, 0, moved);
     await this.saveData();
   }
 
