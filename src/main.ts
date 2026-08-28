@@ -30,10 +30,14 @@ const DEFAULT_SETTINGS: IconSwapperSettings = {
   autoReloadCommander: false,
 };
 
+// 连续删除图标时合并 Commander reload，避免每个操作都触发一次完整重启
+const COMMANDER_RELOAD_DEBOUNCE_MS = 1000;
+
 export default class IconSwapperPlugin extends Plugin {
   settingsTab: IconSwapperSettingsTab;
   iconManager: IconManager;
   settings: IconSwapperSettings = DEFAULT_SETTINGS;
+  private commanderReloadTimer: number | null = null;
 
   async onload() {
     // 必须在 addSettingTab 之前初始化 iconManager，
@@ -65,6 +69,11 @@ export default class IconSwapperPlugin extends Plugin {
   }
 
   onunload() {
+    // 取消未触发的防抖 reload，避免插件卸载后仍重启 Commander
+    if (this.commanderReloadTimer !== null) {
+      window.clearTimeout(this.commanderReloadTimer);
+      this.commanderReloadTimer = null;
+    }
     const safe = async (p: Promise<unknown>, label: string) => {
       try {
         await p;
@@ -115,10 +124,22 @@ export default class IconSwapperPlugin extends Plugin {
     }
   }
 
-  async maybeReloadCommander() {
-    if (this.settings.autoReloadCommander) {
-      await this.reloadCommander();
+  // immediate: 添加图标后立即 reload（Commander 图标选择器马上可用）；
+  // 默认防抖：合并连续删除/切换产生的多次触发
+  async maybeReloadCommander(opts: { immediate?: boolean } = {}) {
+    if (!this.settings.autoReloadCommander) return;
+    if (this.commanderReloadTimer !== null) {
+      window.clearTimeout(this.commanderReloadTimer);
+      this.commanderReloadTimer = null;
     }
+    if (opts.immediate) {
+      await this.reloadCommander();
+      return;
+    }
+    this.commanderReloadTimer = window.setTimeout(() => {
+      this.commanderReloadTimer = null;
+      void this.reloadCommander();
+    }, COMMANDER_RELOAD_DEBOUNCE_MS);
   }
 }
 
@@ -666,7 +687,7 @@ class IconSwapperSettingsTab extends PluginSettingTab {
                   await this.plugin.iconManager.addCustomIcon(name, svg);
                 if (success) {
                   new Notice(`Icon ${name} added.`);
-                  await this.plugin.maybeReloadCommander();
+                  await this.plugin.maybeReloadCommander({ immediate: true });
                 } else {
                   new Notice("Failed to add icon.");
                 }
