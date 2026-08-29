@@ -798,7 +798,7 @@ class IconSwapperSettingsTab extends PluginSettingTab {
       // Auto-reload Commander
       {
         name: "Auto-reload Commander",
-        desc: "After adding or removing an icon, automatically restart the Commander plugin so its icon picker picks up the change. Commander caches the icon list when it loads, so newly added icons won't appear in its picker until Commander is restarted. Enabling this automates that restart.",
+        desc: "After adding or removing an icon, automatically restart the Commander plugin so its icon picker picks up the change.",
         control: {
           type: "toggle",
           key: "autoReloadCommander",
