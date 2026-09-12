@@ -15,7 +15,7 @@ import { DefaultIconsPage } from "./defaultIconsPage";
 import { IconManager, Icons, validSvgRegEx } from "./iconManager";
 import { processSvgContent, renderSvg } from "./svg";
 
-interface IconSwapperSettings {
+interface IconifySettings {
   autoReloadCommander: boolean;
 }
 
@@ -23,20 +23,20 @@ interface IconSwapperSettings {
 type PluginData = {
   icons?: Icons;
   customIcons?: Icons;
-  settings?: Partial<IconSwapperSettings>;
+  settings?: Partial<IconifySettings>;
 } | null;
 
-const DEFAULT_SETTINGS: IconSwapperSettings = {
+const DEFAULT_SETTINGS: IconifySettings = {
   autoReloadCommander: false,
 };
 
 // 连续删除图标时合并 Commander reload，避免每个操作都触发一次完整重启
 const COMMANDER_RELOAD_DEBOUNCE_MS = 1000;
 
-export default class IconSwapperPlugin extends Plugin {
-  settingsTab: IconSwapperSettingsTab;
+export default class IconifyPlugin extends Plugin {
+  settingsTab: IconifySettingsTab;
   iconManager: IconManager;
-  settings: IconSwapperSettings = DEFAULT_SETTINGS;
+  settings: IconifySettings = DEFAULT_SETTINGS;
   private commanderReloadTimer: number | null = null;
 
   async onload() {
@@ -66,10 +66,10 @@ export default class IconSwapperPlugin extends Plugin {
 
     await this.loadSettings(stored);
 
-    this.settingsTab = new IconSwapperSettingsTab(this.app, this);
+    this.settingsTab = new IconifySettingsTab(this.app, this);
     this.addSettingTab(this.settingsTab);
 
-    activeDocument.body.addClass("icon-swapper-enabled");
+    activeDocument.body.addClass("iconify-enabled");
   }
 
   onunload() {
@@ -82,12 +82,12 @@ export default class IconSwapperPlugin extends Plugin {
       try {
         await p;
       } catch (e) {
-        console.error(`[IconSwapper] ${label} failed:`, e);
+        console.error(`[Iconify] ${label} failed:`, e);
       }
     };
     void safe(this.iconManager.revertAll({ shouldSave: false }), "revertAll");
     void safe(this.iconManager.removeAllCustomIcons({ shouldSave: false }), "removeAllCustomIcons");
-    activeDocument.body.removeClass("icon-swapper-enabled");
+    activeDocument.body.removeClass("iconify-enabled");
   }
 
   async loadSettings(stored?: PluginData) {
@@ -123,7 +123,7 @@ export default class IconSwapperPlugin extends Plugin {
       await new Promise((r) => window.setTimeout(r, 50));
       await plugins.enablePlugin(commanderId);
     } catch (e) {
-      console.error("[IconSwapper] Failed to reload Commander:", e);
+      console.error("[Iconify] Failed to reload Commander:", e);
       new Notice(`Failed to reload Commander: ${e}`);
     }
   }
@@ -150,15 +150,15 @@ export default class IconSwapperPlugin extends Plugin {
 // ========== Modals ==========
 
 class ExportModal extends Modal {
-  plugin: IconSwapperPlugin;
+  plugin: IconifyPlugin;
 
-  constructor(app: App, plugin: IconSwapperPlugin) {
+  constructor(app: App, plugin: IconifyPlugin) {
     super(app);
     this.plugin = plugin;
   }
 
   onOpen() {
-    this.modalEl.addClass("modal-icon-swapper");
+    this.modalEl.addClass("modal-iconify");
     // yaml 库懒加载：只在打开导出弹窗时才求值，减少插件启动开销
     void this.renderContent();
   }
@@ -183,7 +183,7 @@ class ExportModal extends Modal {
       .setName("Export configuration")
       .then((setting) => {
         setting.controlEl.createEl("button", {
-          cls: "icon-swapper-download",
+          cls: "iconify-download",
         }, (el) => {
           setIcon(el, "download");
           el.appendText(" Download");
@@ -209,16 +209,16 @@ class ExportModal extends Modal {
 }
 
 class ImportModal extends Modal {
-  plugin: IconSwapperPlugin;
+  plugin: IconifyPlugin;
 
-  constructor(app: App, plugin: IconSwapperPlugin) {
+  constructor(app: App, plugin: IconifyPlugin) {
     super(app);
     this.plugin = plugin;
   }
 
   onOpen() {
     let { contentEl, modalEl } = this;
-    modalEl.addClass("modal-icon-swapper");
+    modalEl.addClass("modal-iconify");
 
     new Setting(contentEl)
       .setName("Import configuration")
@@ -227,10 +227,10 @@ class ImportModal extends Modal {
         const fileInput = setting.controlEl.createEl(
           "input",
           {
-            cls: "icon-swapper-import-input",
+            cls: "iconify-import-input",
             attr: {
-              id: "icon-swapper-import-input",
-              name: "icon-swapper-import-input",
+              id: "iconify-import-input",
+              name: "iconify-import-input",
               type: "file",
               accept: ".yml",
             },
@@ -253,7 +253,7 @@ class ImportModal extends Modal {
         );
 
         setting.controlEl.createEl("button", {
-          cls: "icon-swapper-import-label",
+          cls: "iconify-import-label",
         }, (el) => {
           setIcon(el, "file-up");
           el.appendText(" Import from file");
@@ -309,7 +309,7 @@ class ImportModal extends Modal {
 // ========== Custom Icon Modals ==========
 
 class AddCustomIconModal extends Modal {
-  plugin: IconSwapperPlugin;
+  plugin: IconifyPlugin;
   onSave: (name: string, svg: string) => Promise<void>;
   private currentSvg = "";
   private iconNameInput!: TextComponent;
@@ -317,7 +317,7 @@ class AddCustomIconModal extends Modal {
 
   constructor(
     app: App,
-    plugin: IconSwapperPlugin,
+    plugin: IconifyPlugin,
     onSave: (name: string, svg: string) => Promise<void>
   ) {
     super(app);
@@ -327,7 +327,7 @@ class AddCustomIconModal extends Modal {
 
   onOpen() {
     let { contentEl, modalEl } = this;
-    modalEl.addClass("modal-icon-swapper");
+    modalEl.addClass("modal-iconify");
 
     contentEl.createEl("h2", { text: "Add custom icon" });
 
@@ -366,12 +366,12 @@ class AddCustomIconModal extends Modal {
     // SVG source — Paste
     contentEl.createDiv({
       text: "Or paste SVG",
-      cls: "icon-swapper-svg-label",
+      cls: "iconify-svg-label",
     });
     new TextAreaComponent(contentEl)
       .setPlaceholder("<svg>...</svg>")
       .then((textarea) => {
-        textarea.inputEl.addClass("icon-swapper-svg-textarea");
+        textarea.inputEl.addClass("iconify-svg-textarea");
         textarea.onChange((value) => {
           const trimmed = value.trim();
           if (trimmed && validSvgRegEx.test(trimmed)) {
@@ -386,7 +386,7 @@ class AddCustomIconModal extends Modal {
 
     // Preview
     contentEl.createEl("h3", { text: "Preview" });
-    this.previewEl = contentEl.createDiv({ cls: "icon-swapper-preview" });
+    this.previewEl = contentEl.createDiv({ cls: "iconify-preview" });
     this.updatePreview();
 
     // Buttons
@@ -432,7 +432,7 @@ class AddCustomIconModal extends Modal {
       renderSvg(this.previewEl, this.currentSvg);
     } else if (this.currentSvg) {
       this.previewEl.setText("Invalid SVG");
-      this.previewEl.addClass("icon-swapper-preview-error");
+      this.previewEl.addClass("iconify-preview-error");
     } else {
       this.previewEl.setText("No SVG provided");
     }
@@ -445,7 +445,7 @@ class AddCustomIconModal extends Modal {
 }
 
 class UpdateCustomIconModal extends Modal {
-  plugin: IconSwapperPlugin;
+  plugin: IconifyPlugin;
   iconName: string;
   onSave: (svg: string) => Promise<void>;
   private currentSvg = "";
@@ -453,7 +453,7 @@ class UpdateCustomIconModal extends Modal {
 
   constructor(
     app: App,
-    plugin: IconSwapperPlugin,
+    plugin: IconifyPlugin,
     iconName: string,
     onSave: (svg: string) => Promise<void>
   ) {
@@ -465,13 +465,13 @@ class UpdateCustomIconModal extends Modal {
 
   onOpen() {
     let { contentEl, modalEl } = this;
-    modalEl.addClass("modal-icon-swapper");
+    modalEl.addClass("modal-iconify");
 
     contentEl.createEl("h2", { text: `Update icon: ${this.iconName}` });
 
     // Current icon preview
     new Setting(contentEl).setName("Current icon").then((setting) => {
-      setting.controlEl.createDiv({ cls: "icon-swapper-icon" }, (icon) => {
+      setting.controlEl.createDiv({ cls: "iconify-icon" }, (icon) => {
         try {
           setIcon(icon, this.iconName);
         } catch {
@@ -509,12 +509,12 @@ class UpdateCustomIconModal extends Modal {
     // SVG source — Paste
     contentEl.createDiv({
       text: "Or paste SVG",
-      cls: "icon-swapper-svg-label",
+      cls: "iconify-svg-label",
     });
     new TextAreaComponent(contentEl)
       .setPlaceholder("<svg>...</svg>")
       .then((textarea) => {
-        textarea.inputEl.addClass("icon-swapper-svg-textarea");
+        textarea.inputEl.addClass("iconify-svg-textarea");
         textarea.onChange((value) => {
           const trimmed = value.trim();
           if (trimmed && validSvgRegEx.test(trimmed)) {
@@ -529,7 +529,7 @@ class UpdateCustomIconModal extends Modal {
 
     // Preview
     contentEl.createEl("h3", { text: "Preview" });
-    this.previewEl = contentEl.createDiv({ cls: "icon-swapper-preview" });
+    this.previewEl = contentEl.createDiv({ cls: "iconify-preview" });
     this.updatePreview();
 
     // Buttons
@@ -562,7 +562,7 @@ class UpdateCustomIconModal extends Modal {
       renderSvg(this.previewEl, this.currentSvg);
     } else if (this.currentSvg) {
       this.previewEl.setText("Invalid SVG");
-      this.previewEl.addClass("icon-swapper-preview-error");
+      this.previewEl.addClass("iconify-preview-error");
     } else {
       this.previewEl.setText("No SVG provided");
     }
@@ -623,11 +623,11 @@ class ConfirmModal extends Modal {
 
 // ========== Settings Tab ==========
 
-class IconSwapperSettingsTab extends PluginSettingTab {
+class IconifySettingsTab extends PluginSettingTab {
   icon: string = 'smile';
-  plugin: IconSwapperPlugin;
+  plugin: IconifyPlugin;
 
-  constructor(app: App, plugin: IconSwapperPlugin) {
+  constructor(app: App, plugin: IconifyPlugin) {
     super(app, plugin);
     this.plugin = plugin;
   }
@@ -648,7 +648,7 @@ class IconSwapperSettingsTab extends PluginSettingTab {
         render: (setting) => {
           setting.controlEl.createEl(
             "button",
-            { cls: "icon-swapper-import" },
+            { cls: "iconify-import" },
             (el) => {
               setIcon(el, "download");
               el.appendText(" Import");
@@ -659,7 +659,7 @@ class IconSwapperSettingsTab extends PluginSettingTab {
           );
           setting.controlEl.createEl(
             "button",
-            { cls: "icon-swapper-export" },
+            { cls: "iconify-export" },
             (el) => {
               setIcon(el, "upload");
               el.appendText(" Export");
@@ -741,10 +741,10 @@ class IconSwapperSettingsTab extends PluginSettingTab {
               const capturedName = iconName;
               setting.nameEl.empty();
               setting.nameEl.createDiv(
-                { cls: "icon-swapper-container" },
+                { cls: "iconify-container" },
                 (container) => {
                   container.createDiv(
-                    { cls: "icon-swapper-icon" },
+                    { cls: "iconify-icon" },
                     (icon) => {
                       try {
                         setIcon(icon, capturedName);
@@ -754,7 +754,7 @@ class IconSwapperSettingsTab extends PluginSettingTab {
                     }
                   );
                   container.createDiv(
-                    { cls: "icon-swapper-name" },
+                    { cls: "iconify-name" },
                     (icoName) => {
                       icoName.setText(capturedName);
                     }

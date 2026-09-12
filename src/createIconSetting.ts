@@ -42,14 +42,14 @@ export function createIconSetting({ containerEl, name, iconManager, onIconChange
     // Icon display
     .then((setting) => {
       setting.nameEl.createDiv(
-        { cls: "icon-swapper-container" },
+        { cls: "iconify-container" },
         (container) => {
-          container.createDiv({ cls: "icon-swapper-icon" }, (icon) => {
+          container.createDiv({ cls: "iconify-icon" }, (icon) => {
             // Note: This, confusingly, is obsidian's `setIcon`, not `iconManager.setIcon`.
             //       It's used to render an icon to the DOM
             setIcon(icon, name);
           });
-          container.createDiv({ cls: "icon-swapper-container" }, (icoName) => {
+          container.createDiv({ cls: "iconify-container" }, (icoName) => {
             icoName.setText(name);
           });
         }

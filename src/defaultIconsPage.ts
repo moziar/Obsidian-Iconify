@@ -1,19 +1,19 @@
 import { SettingPage } from "obsidian";
 import { icons } from "./icons";
 import { createIconSetting } from "./createIconSetting";
-import type IconSwapperPlugin from "./main";
+import type IconifyPlugin from "./main";
 
 export class DefaultIconsPage extends SettingPage {
-  plugin: IconSwapperPlugin;
+  plugin: IconifyPlugin;
 
-  constructor(plugin: IconSwapperPlugin) {
+  constructor(plugin: IconifyPlugin) {
     super();
     this.plugin = plugin;
   }
 
   display(): void {
     this.containerEl.empty();
-    this.containerEl.addClass("icon-swapper");
+    this.containerEl.addClass("iconify");
 
     try {
       icons.forEach((name) => {

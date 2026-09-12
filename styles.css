@@ -1,29 +1,29 @@
-.icon-swapper .setting-item .setting-item-control textarea {
+.iconify .setting-item .setting-item-control textarea {
   flex-grow: 1;
   font-family: var(--font-monospace);
   font-size: 12px;
 }
 
-.icon-swapper .setting-item:not(.setting-item-heading) .setting-item-control {
+.iconify .setting-item:not(.setting-item-heading) .setting-item-control {
   width: 60%;
   flex-grow: 0;
 }
 
 /* 添加自定义图标部分的按钮布局 */
-.icon-swapper .setting-item-control {
+.iconify .setting-item-control {
   display: flex;
   align-items: center;
   gap: 10px;
 }
 
-.icon-swapper .setting-item:not(.setting-item-heading) .setting-item-control button {
+.iconify .setting-item:not(.setting-item-heading) .setting-item-control button {
   flex: 0 0 auto;
   box-shadow: none;
   border: 1px solid var(--background-modifier-border);
 }
 
 /* 特别设置Upload SVG按钮样式，使其视觉层级更低 */
-.icon-swapper .setting-item-control button.upload-svg-btn {
+.iconify .setting-item-control button.upload-svg-btn {
   flex: 0 0 auto;
   width: auto;
   padding: 0 12px;
@@ -35,26 +35,26 @@
   justify-content: center;
 }
 
-.icon-swapper .setting-item-control button.upload-svg-btn:hover {
+.iconify .setting-item-control button.upload-svg-btn:hover {
   /* background-color: var(--background-modifier-hover); */
   background-color: var(--interactive-hover);
   color: var(--text-normal);
   box-shadow: none;
 }
 
-.icon-swapper .setting-item-control button.delete-svg-btn {
+.iconify .setting-item-control button.delete-svg-btn {
   background-color: var(--background-modifier-error);
   color: var(--text-on-accent);
   font-weight: normal;
 }
 
-.icon-swapper .setting-item-control button.delete-svg-btn:hover {
+.iconify .setting-item-control button.delete-svg-btn:hover {
   background-color: var(--background-modifier-error-hover);
   color: var(--text-on-accent);
   font-weight: normal;
 }
 
-.icon-swapper-container {
+.iconify-container {
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -62,15 +62,15 @@
   line-height: 1;
 }
 
-.icon-swapper-icon {
+.iconify-icon {
   display: flex;
 }
 
-.icon-swapper-name {
+.iconify-name {
   font-size: 13px;
 }
 
-.icon-swapper-import-input {
+.iconify-import-input {
   width: 0.1px;
   height: 0.1px;
   opacity: 0;
@@ -79,10 +79,10 @@
   z-index: -1;
 }
 
-.icon-swapper-import-label,
-.icon-swapper-export,
-.icon-swapper-import,
-.icon-swapper-download {
+.iconify-import-label,
+.iconify-export,
+.iconify-import,
+.iconify-download {
   display: inline-flex;
   align-items: center;
   gap: 4px;
@@ -96,20 +96,20 @@
   cursor: pointer;
 }
 
-.icon-swapper-import-label:hover,
-.icon-swapper-export:hover,
-.icon-swapper-import:hover,
-.icon-swapper-download:hover {
+.iconify-import-label:hover,
+.iconify-export:hover,
+.iconify-import:hover,
+.iconify-download:hover {
   background-color: var(--interactive-hover);
 }
 
-.modal-icon-swapper {
+.modal-iconify {
   max-height: 80vh;
   display: flex;
   flex-direction: column;
 }
 
-.modal-icon-swapper .modal-content {
+.modal-iconify .modal-content {
   flex-grow: 1;
   /* 留出空间让原生 focus 高亮（绘制在控件外侧）不被滚动容器裁剪；
      负 margin 抵消 padding，保持内容宽度与原来一致 */
@@ -121,7 +121,7 @@
   overflow-y: auto;
 }
 
-.modal-icon-swapper .modal-content textarea {
+.modal-iconify .modal-content textarea {
   display: block;
   width: 100%;
   font-family: var(--font-monospace);
@@ -132,43 +132,43 @@
   box-sizing: border-box;
 }
 
-.modal-icon-swapper textarea.iconify-config-textarea {
+.modal-iconify textarea.iconify-config-textarea {
   min-height: 200px;
 }
 
-.modal-icon-swapper .setting-item {
+.modal-iconify .setting-item {
   align-items: center;
   margin: 2px 0;
   min-height: auto;
   padding: 2px 0;
 }
 
-.modal-icon-swapper .setting-item:first-child {
+.modal-iconify .setting-item:first-child {
   margin-top: 0;
 }
 
-.modal-icon-swapper .setting-item .setting-item-info {
+.modal-iconify .setting-item .setting-item-info {
   margin-right: 8px;
 }
 
-.modal-icon-swapper .setting-item .setting-item-name {
+.modal-iconify .setting-item .setting-item-name {
   font-size: var(--font-ui-small);
 }
 
-.modal-icon-swapper h2,
-.modal-icon-swapper h3 {
+.modal-iconify h2,
+.modal-iconify h3 {
   margin: 4px 0 2px;
   font-size: var(--font-ui-medium);
 }
 
-.icon-swapper-svg-label {
+.iconify-svg-label {
   font-size: var(--font-ui-small);
   color: var(--text-muted);
   margin: 4px 0 2px;
 }
 
 /* Fix Save/Cancel buttons at the bottom of the modal */
-.modal-icon-swapper .modal-content > .setting-item:last-child {
+.modal-iconify .modal-content > .setting-item:last-child {
   position: sticky;
   bottom: 0;
   padding-top: 4px;
@@ -176,17 +176,17 @@
   z-index: 1;
 }
 
-.icon-swapper-import-error {
+.iconify-import-error {
   display: none;
   color: var(--text-error);
 }
 
-.icon-swapper-import-error.active {
+.iconify-import-error.active {
   display: block;
 }
 
 /* 自定义图标 Current Icon 子标题样式 */
-.icon-swapper h4 {
+.iconify h4 {
   margin-top: 20px;
   margin-bottom: 10px;
   font-size: 16px;
@@ -195,22 +195,22 @@
 }
 
 /* 返回按钮 */
-.icon-swapper-back {
+.iconify-back {
   color: var(--text-accent);
   text-decoration: none;
   font-size: 14px;
 }
 
-.icon-swapper-back:hover {
+.iconify-back:hover {
   color: var(--text-accent-hover);
 }
 
 /* 搜索框 */
-.icon-swapper-search {
+.iconify-search {
   margin-bottom: 16px;
 }
 
-.icon-swapper-search-input {
+.iconify-search-input {
   width: 100%;
   padding: 6px 12px;
   border: 1px solid var(--background-modifier-border);
@@ -221,20 +221,20 @@
   outline: none;
 }
 
-.icon-swapper-search-input:focus {
+.iconify-search-input:focus {
   border-color: var(--interactive-accent);
   box-shadow: 0 0 0 2px rgba(var(--interactive-accent-rgb), 0.2);
 }
 
 /* 无搜索结果 */
-.icon-swapper-no-results {
+.iconify-no-results {
   color: var(--text-muted);
   text-align: center;
   padding: 20px;
 }
 
 /* SVG 预览区域 */
-.icon-swapper-preview {
+.iconify-preview {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -247,16 +247,16 @@
   color: var(--text-muted);
 }
 
-.icon-swapper-preview svg {
+.iconify-preview svg {
   width: 48px;
   height: 48px;
 }
 
-.icon-swapper-preview-error {
+.iconify-preview-error {
   color: var(--text-error);
 }
 
-.icon-swapper-svg-textarea {
+.iconify-svg-textarea {
   width: 100%;
   min-height: 80px;
   max-height: 120px;
