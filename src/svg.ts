@@ -77,14 +77,20 @@ const domParser = new DOMParser();
 // Retrieve the default SVG markup for a given icon name
 export function getDefaultIconSVG(name: string) {
   const container = createDiv();
-  setIcon(container, name);
-  const svg = container.children[0];
-  let inner = "";
-  for (let i = 0; i < svg.childNodes.length; i++) {
-    inner += xmlSerializer.serializeToString(svg.childNodes[i]);
+  try {
+    setIcon(container, name);
+    const svg = container.children[0];
+    // 图标名不在注册表中时 setIcon 静默失败，容器为空
+    if (!svg) return "";
+    let inner = "";
+    for (let i = 0; i < svg.childNodes.length; i++) {
+      inner += xmlSerializer.serializeToString(svg.childNodes[i]);
+    }
+    return inner;
+  } finally {
+    // 异常路径也保证临时容器被移除，避免泄漏
+    container.remove();
   }
-  container.remove();
-  return inner;
 }
 
 // Override a default icon's SVG markup

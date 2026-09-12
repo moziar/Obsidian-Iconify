@@ -230,7 +230,13 @@ export class IconManager {
     const { name, shouldSave = true } = opts;
     // Replace the supplied icon with the default
     if (this.icons[name]) {
-      replaceIconSVG(name, this.defaults[name]);
+      // 备份为空说明该图标名不在注册表（如 Obsidian 更新删除了它），
+      // 无默认值可还原，从注册表移除自定义内容即可
+      if (this.defaults[name]) {
+        replaceIconSVG(name, this.defaults[name]);
+      } else {
+        removeIcon(name);
+      }
       delete this.icons[name];
     }
     if (shouldSave) {
