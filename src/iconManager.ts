@@ -79,14 +79,19 @@ export class IconManager {
       : undefined;
 
     // 加载默认图标替换
+    // 逐项 try/catch：单个图标损坏/异常不中断循环，保证其余图标正常加载
     for (const icon in icons) {
-      await this.setIcon({
-        name: icon,
-        svg: icons[icon],
-        shouldSave: false,
-        isTrustedSource: true,
-        scanDom,
-      });
+      try {
+        await this.setIcon({
+          name: icon,
+          svg: icons[icon],
+          shouldSave: false,
+          isTrustedSource: true,
+          scanDom,
+        });
+      } catch (e) {
+        console.error(`[Iconify] Failed to load icon "${icon}":`, e);
+      }
     }
 
     // 加载自定义图标
